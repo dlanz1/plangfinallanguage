@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "c8 node --test test/**/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -13,12 +13,16 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/dlanz1/plangfinallanguage/issues"
   },
   "homepage": "https://github.com/dlanz1/plangfinallanguage#readme",
   "dependencies": {
+    "graph-stringify": "^1.1.0",
     "ohm-js": "^17.5.0"
+  },
+  "devDependencies": {
+    "c8": "^11.0.0"
   }
 }

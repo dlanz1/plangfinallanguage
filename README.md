@@ -4,18 +4,20 @@
 
 # 3DTee — A Golf-Themed Programming Language
 
-3DTee is a statically-typed, golf-themed programming language that compiles to JavaScript. Written with a familiar C-style syntax and a grammar built on [ohm-js](https://ohmjs.org/), 3DTee aims to make programming feel like a round on the links — concise expressions, clear holes (scopes), and a clean follow-through from source to target code.
+3DTee is a statically-typed language where the source code plays like a round of golf. Every program starts at `teeOff` and finishes at `clubHouse`; variables live in `bag`s, constants are `pin`ned, functions are `swing`s, and the compiler keeps score with static types, scope checking, and safety rules. 3DTee compiles to clean, readable JavaScript.
 
 ## Features
 
+- **Program shape** — every program opens with `teeOff` and closes with `clubHouse`
 - **Static typing** with primitives (`int`, `float`, `bool`, `string`), arrays (`[T]`), function types (`(T) -> U`), and optionals (`T?`)
-- **Declarations** via `let` / `const` for variables and `struct` for user-defined record types
-- **First-class functions** with typed parameters, return types, and nested function types
-- **Control flow**: `if` / `else if` / `else`, `while`, `repeat`, `for i in 2...9`, `for i in 2..<9`, and `for i in collection`
-- **Rich expression language**: ternary (`?:`), null-coalescing (`??`), logical (`&&`, `||`), bitwise (`|`, `^`, `&`), shifts (`<<`, `>>`), relational, arithmetic, exponentiation (`**`), and length (`#`)
-- **Unary goodies**: `some`, `no`, and `random` operators for working with optionals and collections
-- **Literals**: numeric (including scientific notation), booleans, strings (with escape sequences and Unicode code points like `\u{1f4a9}`), and typed array literals (`[1, 2, 3]`, `[int]()`)
-- **Unicode identifiers** — e.g., `let コンパイラ = 100;`
+- **Declarations** — `bag` for variables, `pin` for constants, `course` for user-defined record types
+- **First-class functions** via `swing`, with typed parameters, return types, and nested function types
+- **Control flow** — `readLie` / `otherwise` (if/else), `whileBall` (while), `practice` (repeat), and `play <id> through <range-or-collection>` (for)
+- **Flow exits** — `shank` to break out of a loop, `sink` to return from a function
+- **Rich expression language**: ternary (`?:`), null-coalescing (`??`), logical (`&&`, `||`), bitwise (`|`, `^`, `&`), shifts (`<<`, `>>`), relational, arithmetic, exponentiation (`**`), and length prefix (`#`)
+- **Booleans**: `fairway` (true) and `rough` (false) <!-- confirm truth assignment with team -->
+- **Optionals**: `hazard T` for an empty optional of type `T`; `loft` and `bounce` as unary optional/value helpers <!-- confirm exact semantics with team -->
+- **Literals**: numeric (including scientific notation), strings (with `\n`, `\t`, and `\u{...}` code-point escapes), and typed array literals (`[1, 2, 3]`, `[int]()`)
 - **Line comments** with `//`
 
 ## Pipeline
@@ -28,7 +30,7 @@ source → parser → analyzer → optimizer → generator → JavaScript
 
 | Stage       | File                  | Role                                              |
 |-------------|-----------------------|---------------------------------------------------|
-| Parser      | `src/parser.js`       | Matches source against `grammar.ohm` (ohm-js)     |
+| Parser      | `src/parser.js`       | Matches source against `src/3DTee.ohm` (ohm-js)   |
 | Analyzer    | `src/analyzer.js`     | Static semantic analysis                          |
 | Optimizer   | `src/optimizer.js`    | Transforms the analyzed representation            |
 | Generator   | `src/generator.js`    | Emits JavaScript                                  |
@@ -38,8 +40,8 @@ source → parser → analyzer → optimizer → generator → JavaScript
 ## Installation
 
 ```bash
-git clone https://github.com/dlanz1/plangfinallanguage.git
-cd plangfinallanguage
+git clone https://github.com/dlanz1/3DTee.git
+cd 3DTee
 npm install
 ```
 
@@ -61,18 +63,20 @@ Where `<outputType>` is one of:
 ## Example
 
 ```
-let score = 72;
-const par = 72;
+teeOff
+  bag score = 72;
+  pin par = 72;
 
-function relativeToPar(s: int): int {
-  return s - par;
-}
+  swing relativeToPar(s: int): int {
+    sink s - par;
+  }
 
-if score <= par {
-  print("Under or at par!");
-} else {
-  print("Keep practicing.");
-}
+  readLie score <= par {
+    print("Under or at par!");
+  } otherwise {
+    print("Keep practicing.");
+  }
+clubHouse
 ```
 
 ## Testing
@@ -88,18 +92,17 @@ Coverage is reported via [c8](https://github.com/bcoe/c8).
 ## Project Structure
 
 ```
-plangfinallanguage/
+3DTee/
 ├── src/
 │   ├── 3DTee.js        # CLI entry point
 │   ├── compiler.js     # Pipeline orchestrator
 │   ├── parser.js       # Grammar-driven parser
+│   ├── core.js         # AST node definitions
 │   ├── analyzer.js     # Semantic analysis
 │   ├── optimizer.js    # Optimizations
 │   ├── generator.js    # JavaScript emitter
 │   └── 3DTee.ohm       # Language grammar
 ├── test/               # Node test runner suites
-├── grammar.ohm         # Top-level grammar file
-├── index.js            # Grammar match demo
 └── package.json
 ```
 

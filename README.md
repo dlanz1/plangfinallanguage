@@ -15,8 +15,8 @@
 - **Control flow** — `readLie` / `otherwise` (if/else), `whileBall` (while), `practice` (repeat), and `play <id> through <range-or-collection>` (for)
 - **Flow exits** — `shank` to break out of a loop, `sink` to return from a function
 - **Rich expression language**: ternary (`?:`), null-coalescing (`??`), logical (`&&`, `||`), bitwise (`|`, `^`, `&`), shifts (`<<`, `>>`), relational, arithmetic, exponentiation (`**`), and length prefix (`#`)
-- **Booleans**: `fairway` (true) and `rough` (false) <!-- confirm truth assignment with team -->
-- **Optionals**: `hazard T` for an empty optional of type `T`; `loft` and `bounce` as unary optional/value helpers <!-- confirm exact semantics with team -->
+- **Booleans**: `fairway` (true) and `rough` (false)
+- **Optionals**: `hazard T` for an empty optional of type `T`; `loft` and `bounce` as unary optional/value helpers
 - **Literals**: numeric (including scientific notation), strings (with `\n`, `\t`, and `\u{...}` code-point escapes), and typed array literals (`[1, 2, 3]`, `[int]()`)
 - **Line comments** with `//`
 

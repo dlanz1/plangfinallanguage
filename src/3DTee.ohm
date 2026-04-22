@@ -1,0 +1,123 @@
+ThreeDTee {
+  Program     = "teeOff" Statement* "clubHouse"
+
+  Statement   = VarDecl
+              | TypeDecl
+              | FunDecl
+              | Exp9 ("++" | "--") ";"                         --bump
+              | Exp9 "=" Exp ";"                               --assign
+              | Exp9_call ";"                                  --call
+              | shank ";"                                      --break
+              | sink Exp ";"                                   --return
+              | sink ";"                                       --shortreturn
+              | IfStmt
+              | LoopStmt
+              | Block                                          --block
+
+  VarDecl     = (bag | pin) id "=" Exp ";"
+  TypeDecl    = course id "{" Field* "}"
+  Field       = id ":" Type
+  FunDecl     = swing id Params (":" Type)? Block
+  Params      = "(" ListOf<Param, ","> ")"
+  Param       = id ":" Type
+
+  Type        = Type "?"                                       --optional
+              | "[" Type "]"                                   --array
+              | "(" ListOf<Type, ","> ")" "->" Type            --function
+              | id                                             --id
+
+  IfStmt      = readLie Exp Block otherwise Block              --long
+              | readLie Exp Block otherwise IfStmt             --elsif
+              | readLie Exp Block                              --short
+
+  LoopStmt    = whileBall Exp Block                            --while
+              | practice Exp Block                             --repeat
+              | play id through Exp ("..." | "..<") Exp Block  --range
+              | play id through Exp Block                      --collection
+
+  Block       = "{" Statement* "}"
+
+  Exp         = Exp1 "?" Exp1 ":" Exp                          --conditional
+              | Exp1
+
+  Exp1        = Exp1 "??" Exp2                                 --unwrapelse
+              | Exp2
+
+  Exp2        = Exp3 ("||" Exp3)+                              --or
+              | Exp3 ("&&" Exp3)+                              --and
+              | Exp3
+
+  Exp3        = Exp4 ("|" Exp4)+                               --bitor
+              | Exp4 ("^" Exp4)+                               --bitxor
+              | Exp4 ("&" Exp4)+                               --bitand
+              | Exp4
+
+  Exp4        = Exp5 ("<=" | "<" | "==" | "!=" | ">=" | ">") Exp5 --compare
+              | Exp5
+
+  Exp5        = Exp5 ("<<" | ">>") Exp6                        --shift
+              | Exp6
+
+  Exp6        = Exp6 ("+" | "-") Exp7                          --add
+              | Exp7
+
+  Exp7        = Exp7 ("*" | "/" | "%") Exp8                    --multiply
+              | Exp8
+
+  Exp8        = Exp9 "**" Exp8                                 --power
+              | Exp9
+              | ("#" | "-" | "!" | loft | bounce) Exp9        --unary
+
+  Exp9        = fairway ~mut
+              | rough ~mut
+              | floatlit ~mut
+              | intlit ~mut
+              | hazard Type ~mut                               --emptyopt
+              | Exp9 "(" ListOf<Exp, ","> ")" ~mut            --call
+              | Exp9 "[" Exp "]"                              --subscript
+              | Exp9 ("." | "?.") id                          --member
+              | stringlit ~mut
+              | id                                            --id
+              | Type_array "(" ")" ~mut                       --emptyarray
+              | "[" NonemptyListOf<Exp, ","> "]" ~mut         --arrayexp
+              | "(" Exp ")" ~mut                              --parens
+
+  intlit      = digit+
+  floatlit    = digit+ "." digit+ (("E" | "e") ("+" | "-")? digit+)? 
+
+  stringlit   = "\"" char* "\""
+  char        = ~control ~"\\" ~"\"" any
+              | "\\" ("n" | "t" | "\"" | "\\")                --escape
+              | "\\u{" hex hex? hex? hex? hex? hex? "}"       --codepoint
+
+  control     = "\x00".."\x1f" | "\x80".."\x9f"
+  hex         = hexDigit
+  mut         = ~"==" "=" | "++" | "--"
+
+  bag         = "bag" ~alnum
+  pin         = "pin" ~alnum
+  course      = "course" ~alnum
+  swing       = "swing" ~alnum
+  readLie     = "readLie" ~alnum
+  otherwise   = "otherwise" ~alnum
+  whileBall   = "whileBall" ~alnum
+  practice    = "practice" ~alnum
+  play        = "play" ~alnum
+  through     = "through" ~alnum
+  bounce      = "bounce" ~alnum
+  loft        = "loft" ~alnum
+  shank       = "shank" ~alnum
+  sink        = "sink" ~alnum
+  landed      = "landed" ~alnum
+  hazard      = "hazard" ~alnum
+  fairway     = "fairway" ~alnum
+  rough       = "rough" ~alnum
+
+  keyword     = bag | pin | course | swing | readLie | otherwise
+              | whileBall | practice | play | through | bounce
+              | loft | shank | sink | landed | hazard | fairway | rough
+
+  id          = ~keyword letter alnum*
+
+  space      += "//" (~"\n" any)*                             --comment
+}

@@ -4,16 +4,21 @@
 
 # 3DTee — A Golf-Themed Programming Language
 
-3DTee is a golf-themed language where each program starts at `teeOff` and ends at `clubHouse`. The current repository includes a working grammar/parser layer and a compiler pipeline scaffold.
+3DTee is a statically-typed language where the source code plays like a round of golf. Every program starts at `teeOff` and finishes at `clubHouse`; variables live in `bag`s, constants are `pin`ned, functions are `swing`s, and the compiler keeps score with static types, scope checking, and safety rules. 3DTee compiles to clean, readable JavaScript.
 
 ## Features
 
-- Grammar-driven parser implemented with Ohm (`src/3DTee.ohm`, `src/parser.js`)
-- Golf-themed syntax (`bag`, `pin`, `course`, `swing`, `readLie`, `play`, etc.)
-- Expressions include `?:`, `??`, logical/bitwise/shift/arithmetic operators, `#`, and unary helpers
-- Literals include numeric forms, strings with escapes, typed empty arrays (`[T]()`), and array literals
-- `//` line comments and Unicode identifiers
-- Analyzer, optimizer, and generator are currently scaffolded only (**not yet implemented**)
+- **Program shape** — every program opens with `teeOff` and closes with `clubHouse`
+- **Static typing** with primitives (`int`, `float`, `bool`, `string`), arrays (`[T]`), function types (`(T) -> U`), and optionals (`T?`)
+- **Declarations** — `bag` for variables, `pin` for constants, `course` for user-defined record types
+- **First-class functions** via `swing`, with typed parameters, return types, and nested function types
+- **Control flow** — `readLie` / `otherwise` (if/else), `whileBall` (while), `practice` (repeat), and `play <id> through <range-or-collection>` (for)
+- **Flow exits** — `shank` to break out of a loop, `sink` to return from a function
+- **Rich expression language**: ternary (`?:`), null-coalescing (`??`), logical (`&&`, `||`), bitwise (`|`, `^`, `&`), shifts (`<<`, `>>`), relational, arithmetic, exponentiation (`**`), and length prefix (`#`)
+- **Booleans**: `fairway` (true) and `rough` (false)
+- **Optionals**: `hazard T` for an empty optional of type `T`; `loft` and `bounce` as unary optional/value helpers
+- **Literals**: numeric (including scientific notation), strings (with `\n`, `\t`, and `\u{...}` code-point escapes), and typed array literals (`[1, 2, 3]`, `[int]()`)
+- **Line comments** with `//`
 
 ## Pipeline
 
@@ -25,12 +30,12 @@ source → parser → analyzer → optimizer → generator → JavaScript
 
 | Stage       | File                  | Role                                              |
 |-------------|-----------------------|---------------------------------------------------|
-| Parser      | `src/parser.js`       | Matches source against `src/3DTee.ohm` (implemented) |
-| Analyzer    | `src/analyzer.js`     | Static semantic analysis (**not yet implemented**) |
-| Optimizer   | `src/optimizer.js`    | Optimization passes (**not yet implemented**) |
-| Generator   | `src/generator.js`    | JavaScript emission (**not yet implemented**) |
-| Driver      | `src/3DTee.js`        | CLI entry point |
-| Compiler    | `src/compiler.js`     | Orchestrates stage calls |
+| Parser      | `src/parser.js`       | Matches source against `src/3DTee.ohm` (ohm-js)   |
+| Analyzer    | `src/analyzer.js`     | Static semantic analysis                          |
+| Optimizer   | `src/optimizer.js`    | Transforms the analyzed representation            |
+| Generator   | `src/generator.js`    | Emits JavaScript                                  |
+| Driver      | `src/3DTee.js`        | CLI entry point                                   |
+| Compiler    | `src/compiler.js`     | Orchestrates the four stages                      |
 
 ## Installation
 
@@ -51,9 +56,9 @@ node src/3DTee.js <filename> <outputType>
 Where `<outputType>` is one of:
 
 - `parsed` — confirms the program was matched by the grammar
-- `analyzed` — analyzer stage output (**currently not implemented**)
-- `optimized` — optimizer stage output (**currently not implemented**)
-- `js` — JavaScript translation (**currently not implemented**)
+- `analyzed` — the statically analyzed representation
+- `optimized` — the optimized representation
+- `js` — the JavaScript translation
 
 ## Example
 
@@ -74,32 +79,29 @@ teeOff
 clubHouse
 ```
 
-More syntax-valid examples are in `examples/`.
-
 ## Testing
 
-Tests use Node's built-in test runner:
+Tests are written with Node's built-in test runner and cover parser, analyzer, optimizer, generator, and full compiler flows:
 
 ```bash
 npm test
 ```
 
-Current emphasis is parser coverage; analyzer/optimizer/generator suites are placeholder TODO blocks until those modules are implemented.
+Coverage is reported via [c8](https://github.com/bcoe/c8).
 
 ## Project Structure
 
 ```
 3DTee/
-├── examples/             # Syntax-valid 3DTee programs
 ├── src/
 │   ├── 3DTee.js        # CLI entry point
-│   ├── 3DTee.ohm       # Authoritative grammar
 │   ├── compiler.js     # Pipeline orchestrator
 │   ├── parser.js       # Grammar-driven parser
-│   ├── core.js         # AST scaffolding placeholders
-│   ├── analyzer.js     # Semantic analysis (pending)
-│   ├── optimizer.js    # Optimizations (pending)
-│   └── generator.js    # JavaScript emitter (pending)
+│   ├── core.js         # AST node definitions
+│   ├── analyzer.js     # Semantic analysis
+│   ├── optimizer.js    # Optimizations
+│   ├── generator.js    # JavaScript emitter
+│   └── 3DTee.ohm       # Language grammar
 ├── test/               # Node test runner suites
 └── package.json
 ```

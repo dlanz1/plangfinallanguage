@@ -1,9 +1,15 @@
-// Demonstrates closed and half-open range loops.
+// Demonstrates while, practice, and shank loop control.
 teeOff
-  play hole through 1...3 {
-    bag closedRangeHole = hole;
+  bag strokes = 0;
+
+  whileBall strokes < 5 {
+    strokes = strokes + 1;
+    readLie strokes == 3 {
+      shank;
+    }
   }
-  play practiceIndex through 0..<2 {
-    bag halfOpenIndex = practiceIndex;
-  }
+
+  practice {
+    strokes = strokes - 1;
+  } whileBall strokes > 0;
 clubHouse

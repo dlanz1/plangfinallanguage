@@ -1,8 +1,14 @@
 // Demonstrates structs, arrays, and for-each style play loops.
 teeOff
-  course HoleScore { hole: int strokes: int }
-  bag totals = [3, 4, 5, 4];
+  course HoleScore {
+    hole: int;
+    strokes: int;
+  }
+  bag totals: [int] = [3, 4, 5, 4];
+  bag backups: [int] = [int]();
+  bag holes = #totals;
+  bag first = totals[0];
   play s through totals {
-    bag current = s;
+    print(s);
   }
 clubHouse

@@ -22,17 +22,15 @@ clubHouse
         )
     })
 
-    it("analyzed mode surfaces not implemented from analyzer", () => {
-        assert.throws(
-            () =>
-                compile(
-                    `
+    it("analyzed mode returns an analyzed program", () => {
+        const out = compile(
+            `
 teeOff
 clubHouse
 `,
-                    "analyzed",
-                ),
-            /Not implemented yet/,
+            "analyzed",
         )
+        assert.equal(out.kind, "Program")
+        assert.deepEqual(out.statements, [])
     })
 })

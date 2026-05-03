@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>3DTee Programming Language</title>
+    <meta
+      name="description"
+      content="3DTee is a golf-themed statically typed programming language that compiles to readable JavaScript."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17221b;
+        --muted: #516058;
+        --paper: #f8fbf7;
+        --panel: #ffffff;
+        --line: #d9e3dc;
+        --green: #1e7a4d;
+        --green-dark: #0f4f35;
+        --gold: #d99a29;
+        --sky: #2f78a8;
+        --code: #101713;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--green-dark);
+        font-weight: 700;
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.18em;
+      }
+
+      img {
+        max-width: 100%;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--line);
+        background: rgba(248, 251, 247, 0.92);
+        backdrop-filter: blur(16px);
+      }
+
+      nav,
+      main > section,
+      .hero-inner,
+      footer {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 68px;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--ink);
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .brand img {
+        width: 44px;
+        height: 44px;
+      }
+
+      .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        justify-content: flex-end;
+        font-size: 0.95rem;
+      }
+
+      .nav-links a {
+        color: var(--muted);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .hero {
+        border-bottom: 1px solid var(--line);
+        background:
+          linear-gradient(120deg, rgba(30, 122, 77, 0.14), transparent 40%),
+          linear-gradient(18deg, rgba(217, 154, 41, 0.16), transparent 58%),
+          var(--paper);
+      }
+
+      .hero-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+        gap: 44px;
+        align-items: center;
+        padding: 72px 0 56px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--green-dark);
+        font-size: 0.86rem;
+        font-weight: 900;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.08;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 10vw, 6.8rem);
+        font-weight: 950;
+      }
+
+      h2 {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        margin-bottom: 18px;
+      }
+
+      h3 {
+        font-size: 1.1rem;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: clamp(1.1rem, 2vw, 1.35rem);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 30px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        border: 1px solid var(--green-dark);
+        border-radius: 6px;
+        padding: 0 18px;
+        color: var(--green-dark);
+        background: transparent;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .button.primary {
+        color: #ffffff;
+        background: var(--green-dark);
+      }
+
+      .hero-art {
+        display: grid;
+        place-items: center;
+        min-height: 320px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 55% 35%, #ffffff 0 9px, transparent 10px),
+          linear-gradient(165deg, #eaf4ec 0 48%, #c7dfce 49% 100%);
+        box-shadow: 0 24px 80px rgba(23, 34, 27, 0.12);
+      }
+
+      .hero-art img {
+        width: min(280px, 68%);
+        filter: drop-shadow(0 16px 24px rgba(23, 34, 27, 0.18));
+      }
+
+      section {
+        padding: 64px 0;
+      }
+
+      section + section {
+        border-top: 1px solid var(--line);
+      }
+
+      .story p {
+        max-width: 900px;
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 1.08rem;
+      }
+
+      .feature-grid,
+      .status-grid,
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .feature,
+      .status,
+      .bio,
+      .example {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .feature,
+      .status,
+      .bio {
+        padding: 18px;
+      }
+
+      .feature p,
+      .status p,
+      .bio p {
+        margin: 10px 0 0;
+        color: var(--muted);
+      }
+
+      .status strong {
+        color: var(--green-dark);
+      }
+
+      .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .example {
+        overflow: hidden;
+      }
+
+      .example header {
+        position: static;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-bottom: 1px solid #25342b;
+        background: var(--code);
+        color: #ffffff;
+      }
+
+      .example header span {
+        color: #b9d0c1;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        background: var(--code);
+        color: #f2f7f3;
+        font:
+          0.9rem/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      code {
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      pre code {
+        display: block;
+        padding: 0 16px 18px;
+        min-width: 620px;
+      }
+
+      .note {
+        max-width: 900px;
+        margin: 18px 0 0;
+        padding: 14px 16px;
+        border-left: 4px solid var(--gold);
+        background: #fff8ea;
+        color: #5c481d;
+        font-weight: 700;
+      }
+
+      footer {
+        padding: 36px 0 48px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 860px) {
+        nav {
+          align-items: flex-start;
+          flex-direction: column;
+          padding: 12px 0;
+        }
+
+        .nav-links {
+          justify-content: flex-start;
+        }
+
+        .hero-inner,
+        .feature-grid,
+        .status-grid,
+        .team-grid,
+        .examples-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-inner {
+          padding-top: 44px;
+        }
+
+        .hero-art {
+          min-height: 240px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Main navigation">
+        <a class="brand" href="#top">
+          <img src="3DTee-Logo.svg" alt="3DTee logo" />
+          <span>3DTee</span>
+        </a>
+        <div class="nav-links">
+          <a href="#story">Story</a>
+          <a href="#features">Features</a>
+          <a href="#examples">Examples</a>
+          <a href="#checks">Checks</a>
+          <a href="#team">Team</a>
+          <a href="https://github.com/dlanz1/3DTee">GitHub</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-inner">
+          <div>
+            <p class="eyebrow">Golf-themed static language</p>
+            <h1 id="page-title">3DTee</h1>
+            <p class="lede">
+              A programming language where source code plays like a round of
+              golf: start at teeOff, finish at clubHouse, keep values in bags,
+              pin constants in place, and let the compiler keep score.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="https://github.com/dlanz1/3DTee"
+                >View Compiler</a
+              >
+              <a class="button" href="#examples">Read Examples</a>
+              <a
+                class="button"
+                href="https://github.com/dlanz1/3DTee/blob/main/src/3DTee.ohm"
+                >Open Grammar</a
+              >
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <img src="3DTee-Logo.svg" alt="" />
+          </div>
+        </div>
+      </section>
+
+      <section id="story" class="story" aria-labelledby="story-title">
+        <h2 id="story-title">The Story</h2>
+        <p>
+          3DTee turns a golf scorecard into a programming model. A program opens
+          with <code>teeOff</code>, closes with <code>clubHouse</code>, and uses
+          domain language like <code>bag</code>, <code>pin</code>,
+          <code>swing</code>, <code>readLie</code>, and <code>play</code> to
+          make the code feel like moving through a course.
+        </p>
+        <p>
+          The language is designed to be playful without giving up rigor. It has
+          static types, arrays, optionals, structured records, functions, loops,
+          scoped blocks, returns, breaks, and expression forms rich enough to
+          model scorecards, leaderboards, tee times, and course statistics.
+        </p>
+        <p>
+          The compiler follows the classic course pipeline: Ohm grammar,
+          parser, analyzer, optimizer, and JavaScript generator. Parsing and
+          static analysis are implemented now; optimization and code generation
+          are the remaining placeholder stages.
+        </p>
+      </section>
+
+      <section id="features" aria-labelledby="features-title">
+        <h2 id="features-title">Language Features</h2>
+        <div class="feature-grid">
+          <article class="feature">
+            <h3>Program Shape</h3>
+            <p>
+              Every complete program starts with <code>teeOff</code> and ends
+              with <code>clubHouse</code>.
+            </p>
+          </article>
+          <article class="feature">
+            <h3>Typed Declarations</h3>
+            <p>
+              Use <code>bag</code> for variables, <code>pin</code> for
+              constants, and <code>course</code> for record-like types.
+            </p>
+          </article>
+          <article class="feature">
+            <h3>Functions</h3>
+            <p>
+              Declare typed functions with <code>swing</code>, parameters,
+              optional return annotations, and <code>sink</code> returns.
+            </p>
+          </article>
+          <article class="feature">
+            <h3>Control Flow</h3>
+            <p>
+              Branch with <code>readLie</code>, loop with
+              <code>whileBall</code>, <code>practice</code>, and
+              <code>play</code>, and exit loops with <code>shank</code>.
+            </p>
+          </article>
+          <article class="feature">
+            <h3>Optionals</h3>
+            <p>
+              Model missing values with <code>T?</code>,
+              <code>hazard T</code>, null-coalescing <code>??</code>,
+              <code>loft</code>, and <code>bounce</code>.
+            </p>
+          </article>
+          <article class="feature">
+            <h3>Expressions</h3>
+            <p>
+              Supports arithmetic, comparison, logic, bitwise operations,
+              shifts, exponentiation, ternaries, calls, indexing, and course
+              member access.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="examples" aria-labelledby="examples-title">
+        <h2 id="examples-title">Example Programs</h2>
+        <div class="examples-grid">
+          <article class="example">
+            <header>
+              <h3>Scorecard</h3>
+              <span>records, arrays, collection loop</span>
+            </header>
+            <pre><code>teeOff
+  course HoleScore {
+    hole: int;
+    strokes: int;
+  }
+
+  bag totals: [int] = [3, 4, 5, 4];
+  bag backups: [int] = [int]();
+  bag holes = #totals;
+  bag first = totals[0];
+
+  play s through totals {
+    print(s);
+  }
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Handicap</h3>
+              <span>functions, constants, assignment, if</span>
+            </header>
+            <pre><code>teeOff
+  pin par: int = 72;
+  bag score: int = 74;
+
+  swing relativeToPar(s: int): int {
+    sink s - par;
+  }
+
+  bag delta = relativeToPar(score);
+  readLie delta &lt;= 0 {
+    print("under or even");
+  } otherwise {
+    score = score - 1;
+  }
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Leaderboard</h3>
+              <span>while, practice, break</span>
+            </header>
+            <pre><code>teeOff
+  bag strokes = 0;
+
+  whileBall strokes &lt; 5 {
+    strokes = strokes + 1;
+    readLie strokes == 3 {
+      shank;
+    }
+  }
+
+  practice {
+    strokes = strokes - 1;
+  } whileBall strokes &gt; 0;
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Caddie</h3>
+              <span>optionals and function types</span>
+            </header>
+            <pre><code>teeOff
+  swing applyFn(f: (int) -&gt; int, x: int): int {
+    sink f(x);
+  }
+
+  bag maybeScore: int? = hazard int;
+  bag hasScore = loft maybeScore;
+  bag score = maybeScore ?? 72;
+  bag realScore = bounce maybeScore;
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Front Nine</h3>
+              <span>operators and numeric literals</span>
+            </header>
+            <pre><code>teeOff
+  bag powerScore = 2 ** 4;
+  bag science = 1.0e1 * 2.5e0;
+  bag mask = (1 | 2) ^ (3 &amp; 4);
+  bag shifted = 8 &lt;&lt; 2 &gt;&gt; 1;
+  bag ok = !rough &amp;&amp; fairway;
+  bag bonus = ok ? 1 : 0;
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Course Stats</h3>
+              <span>strings, escapes, comments</span>
+            </header>
+            <pre><code>// Demonstrates strings, unicode escapes, and comments.
+teeOff
+  bag courseName = "Pebble\nBeach\u{26F3}";
+  bag player = "Compiler";
+  bag strokes = 71;
+clubHouse</code></pre>
+          </article>
+
+          <article class="example">
+            <header>
+              <h3>Lie Check</h3>
+              <span>conditionals, booleans, blocks</span>
+            </header>
+            <pre><code>teeOff
+  pin par = 72;
+  bag score = 70;
+  bag underPar = score &lt; par;
+
+  readLie underPar {
+    bag message = "attack the pin";
+  } otherwise {
+    bag message = "play safe";
+  }
+clubHouse</code></pre>
+          </article>
+        </div>
+        <p class="note">
+          Current compiler status: parser and analyzer are implemented.
+          Optimizer and JavaScript generation currently exist as compiler
+          stages but are still placeholders in this repository.
+        </p>
+      </section>
+
+      <section id="checks" aria-labelledby="checks-title">
+        <h2 id="checks-title">Static, Safety, and Security Checks</h2>
+        <div class="status-grid">
+          <article class="status">
+            <h3>Scopes and Declarations</h3>
+            <p>
+              <strong>Implemented.</strong> Names resolve through lexical
+              scope, duplicate declarations are rejected, and unknown
+              identifiers are reported.
+            </p>
+          </article>
+          <article class="status">
+            <h3>Type Safety</h3>
+            <p>
+              <strong>Implemented.</strong> Assignments, function calls,
+              returns, operators, arrays, records, and optionals are checked
+              during analysis.
+            </p>
+          </article>
+          <article class="status">
+            <h3>Control Flow</h3>
+            <p>
+              <strong>Implemented.</strong> <code>sink</code> is accepted only
+              in function bodies, and <code>shank</code> is accepted only inside
+              loop bodies.
+            </p>
+          </article>
+          <article class="status">
+            <h3>Constants</h3>
+            <p>
+              <strong>Implemented.</strong> <code>pin</code> declarations
+              reject reassignment and mutation attempts.
+            </p>
+          </article>
+          <article class="status">
+            <h3>Optionals</h3>
+            <p>
+              <strong>Implemented.</strong> Optional operations validate
+              operands and fallback expressions before later compiler stages.
+            </p>
+          </article>
+          <article class="status">
+            <h3>Readable Errors</h3>
+            <p>
+              <strong>Implemented.</strong> Parse and analysis errors include
+              source line and column information for the violated rule.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="team" aria-labelledby="team-title">
+        <h2 id="team-title">Developers</h2>
+        <div class="team-grid">
+          <article class="bio">
+            <h3>Derek Lanz</h3>
+            <p>
+              Collaborator on the 3DTee compiler and language design.
+              <a href="https://github.com/dlanz1">GitHub</a>
+            </p>
+          </article>
+          <article class="bio">
+            <h3>Daniel Lee</h3>
+            <p>
+              Collaborator on the 3DTee compiler and language design.
+              <a href="https://github.com/DanielJLee0917">GitHub</a>
+            </p>
+          </article>
+          <article class="bio">
+            <h3>Devan Joaquin Abiva</h3>
+            <p>
+              Collaborator on the 3DTee compiler and language design.
+              <a href="https://github.com/DevanJoaquin">GitHub</a>
+            </p>
+          </article>
+          <article class="bio">
+            <h3>Trevor Leung</h3>
+            <p>
+              Collaborator on the 3DTee compiler and language design.
+              <a href="https://github.com/TrevorLeung05">GitHub</a>
+            </p>
+          </article>
+          <article class="bio">
+            <h3>Bill Nguyen</h3>
+            <p>
+              Collaborator on the 3DTee compiler and language design.
+              <a href="https://github.com/BillNg2801">GitHub</a>
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        3DTee is open source on
+        <a href="https://github.com/dlanz1/3DTee">GitHub</a>. Read the
+        <a href="https://github.com/dlanz1/3DTee/blob/main/src/3DTee.ohm"
+          >Ohm grammar</a
+        >
+        or run the compiler from the repository with
+        <code>node src/3DTee.js &lt;file&gt; &lt;outputType&gt;</code>.
+      </p>
+    </footer>
+  </body>
+</html>

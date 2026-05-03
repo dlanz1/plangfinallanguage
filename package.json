@@ -7,7 +7,7 @@
     "3dtee": "src/3DTee.js"
   },
   "scripts": {
-    "test": "c8 node --test test/**/*.test.js",
+    "test": "c8 node --test test",
     "test:parser": "c8 node --test test/parser.test.js"
   },
   "repository": {

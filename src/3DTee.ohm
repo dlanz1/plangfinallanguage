@@ -31,7 +31,7 @@ ThreeDTee {
   Block = "{" Statement* "}"
 
   AssignStmt = Exp9 "=" Exp ";"
-  CallStmt = Exp9_call ";"
+  CallStmt = Exp9Call ";"
 
   IfStmt
     = "readLie" Exp Block "otherwise" Block      --long
@@ -40,8 +40,7 @@ ThreeDTee {
   WhileStmt = "whileBall" Exp Block
   PracticeStmt = "practice" Block "whileBall" Exp ";"
 
-  ForStmt
-    = "play" id "through" Exp Block
+  ForStmt = "play" id "through" Exp Block
 
   BreakStmt = "shank" ";"
 
@@ -59,63 +58,77 @@ ThreeDTee {
     | "string"                                   --string
     | id                                         --id
 
-  Exp = Exp1 "?" Exp ":" Exp                     --conditional
-      | Exp1
+  Exp
+    = Exp1 "?" Exp ":" Exp                       --conditional
+    | Exp1                                       --basic
 
-  Exp1 = Exp1 "??" Exp2                         --coal
-       | Exp2
+  Exp1
+    = Exp1 "??" Exp2                             --coal
+    | Exp2                                       --basic
 
-  Exp2 = Exp2 "||" Exp3                         --or
-       | Exp3
+  Exp2
+    = Exp2 "||" Exp3                             --or
+    | Exp3                                       --basic
 
-  Exp3 = Exp3 "&&" Exp4                         --and
-       | Exp4
+  Exp3
+    = Exp3 "&&" Exp4                             --and
+    | Exp4                                       --basic
 
-  Exp4 = Exp4 "|" Exp5                          --bitor
-       | Exp5
+  Exp4
+    = Exp4 "|" Exp5                              --bitor
+    | Exp5                                       --basic
 
-  Exp5 = Exp5 "^" Exp6                          --bitxor
-       | Exp6
+  Exp5
+    = Exp5 "^" Exp6                              --bitxor
+    | Exp6                                       --basic
 
-  Exp6 = Exp6 "&" Exp7                          --bitand
-       | Exp7
+  Exp6
+    = Exp6 "&" Exp7                              --bitand
+    | Exp7                                       --basic
 
-  Exp7 = Exp8 relop Exp8                        --compare
-       | Exp8
+  Exp7
+    = Exp8 relop Exp8                            --compare
+    | Exp8                                       --basic
 
-  Exp8 = Exp8 shiftop Exp9                      --shift
-       | Exp9
+  Exp8
+    = Exp8 shiftop Exp9                          --shift
+    | Exp9                                       --basic
 
-  Exp9 = Exp9 addop Exp10                       --add
-       | Exp10
+  Exp9
+    = Exp9 addop Exp10                           --add
+    | Exp10                                      --basic
 
-  Exp10 = Exp10 mulop Exp11                     --mul
-        | Exp11
+  Exp10
+    = Exp10 mulop Exp11                          --mul
+    | Exp11                                      --basic
 
-  Exp11 = Exp12 "**" Exp11                      --power
-        | Exp12
+  Exp11
+    = Exp12 "**" Exp11                           --power
+    | Exp12                                      --basic
 
-  Exp12 = prefixop Exp12                        --prefix
-        | Exp13
+  Exp12
+    = prefixop Exp12                             --prefix
+    | Exp13                                      --basic
 
-  Exp13 = Exp13 "[" Exp "]"                     --subscript
-        | Exp13 "." id                          --member
-        | Exp13 "(" ListOf<Exp, ","> ")"        --call
-        | Primary
+  Exp13
+    = Exp13 "[" Exp "]"                          --subscript
+    | Exp13 "." id                               --member
+    | Exp13 "(" ListOf<Exp, ","> ")"             --call
+    | Primary                                    --basic
 
-  Exp9_call = Exp13 "(" ListOf<Exp, ","> ")"
+  Exp9Call = Exp13 "(" ListOf<Exp, ","> ")"
 
   Primary
-    = floatlit
-    | intlit
-    | stringlit
-    | "fairway"                                 --true
-    | "rough"                                   --false
-    | "hazard" Type                             --emptyoptional
-    | ArrayLit
-    | EmptyArrayLit
-    | id
-    | "(" Exp ")"
+    = floatlit                                   --float
+    | intlit                                     --int
+    | stringlit                                  --string
+    | "fairway"                                  --true
+    | "rough"                                    --false
+    | "hazard" Type                              --emptyoptional
+    | ArrayLit                                   --array
+    | EmptyArrayLit                              --emptyarray
+    | id                                         --id
+    | "(" Exp ")"                                --parens
 
   ArrayLit = "[" ListOf<Exp, ","> "]"
   EmptyArrayLit = "[" Type "]" "(" ")"
@@ -138,22 +151,24 @@ ThreeDTee {
     | "int" | "float" | "bool" | "string"
 
   intlit = digit+
+
   floatlit
-    = digit+ "." digit+ exponent?
-    | digit+ exponent
+    = digit+ "." digit+ exponent?                --withDecimal
+    | digit+ exponent                            --withExponent
 
   exponent = ("e" | "E") ("+" | "-")? digit+
 
   stringlit = "\"" stringchar* "\""
+
   stringchar
-    = escape
-    | ~"\\" ~"\"" any
+    = escape                                     --escape
+    | ~"\\" ~"\"" any                            --normal
 
   escape
-    = "\\" ("n" | "t" | "\"" | "\\" )
-    | "\\u{" hexDigit+ "}"
+    = "\\" ("n" | "t" | "\"" | "\\")             --simple
+    | "\\u{" hexdigit+ "}"                       --unicode
 
-  hexDigit = digit | "a".."f" | "A".."F"
+  hexdigit = digit | "a".."f" | "A".."F"
 
   space += comment
   comment = "//" (~"\n" any)*

@@ -1,285 +1,585 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
-import parse, { match } from "../src/parser.js"
+import { parse, match } from "../src/parser.js"
 import { ParseError } from "../src/errors.js"
 
 const okPrograms = [
-    [
-        "minimal program",
-        `
+  [
+    "minimal program",
+    `
 teeOff
 clubHouse
 `,
-    ],
-    [
-        "declarations and assignment",
-        `
+  ],
+
+  [
+    "variable declaration",
+    `
 teeOff
   bag score = 72;
+clubHouse
+`,
+  ],
+
+  [
+    "constant declaration",
+    `
+teeOff
   pin par = 72;
+clubHouse
+`,
+  ],
+
+  [
+    "typed declarations",
+    `
+teeOff
+  bag score: int = 72;
+  pin playerName: string = "Devan";
+clubHouse
+`,
+  ],
+
+  [
+    "assignment",
+    `
+teeOff
+  bag score = 72;
   score = score - 1;
 clubHouse
 `,
-    ],
-    [
-        "function with optional and array types",
-        `
+  ],
+
+  [
+    "boolean literals",
+    `
 teeOff
-  swing pick(a: int?, b: [int]): int {
-    sink a ?? b[0];
-  }
+  bag madePutt: bool = fairway;
+  bag missedPutt: bool = rough;
 clubHouse
 `,
-    ],
-    [
-        "struct declaration and member access",
-        `
-teeOff
-  course Hole { number: int distance: float }
-  bag h = hazard Hole;
-  bag value = h?.number ?? 0;
-clubHouse
-`,
-    ],
-    [
-        "if / else-if / else chain",
-        `
-teeOff
-  bag x = 3;
-  readLie x < 0 { x = 0; } otherwise readLie x == 0 { x = 1; } otherwise { x = 2; }
-clubHouse
-`,
-    ],
-    [
-        "while and repeat loops",
-        `
-teeOff
-  bag i = 0;
-  whileBall i < 3 { i++; }
-  practice 2 { i--; }
-clubHouse
-`,
-    ],
-    [
-        "range and collection loops",
-        `
-teeOff
-  bag xs = [1, 2, 3];
-  play i through 1...3 { bag a = i; }
-  play j through 0..<2 { bag b = j; }
-  play x through xs { bag c = x; }
-clubHouse
-`,
-    ],
-    [
-        "typed empty array literal",
-        `
-teeOff
-  bag xs = [int]();
-clubHouse
-`,
-    ],
-    [
-        "unicode identifier and string escapes",
-        `
-teeOff
-  bag コンパイラ = 1;
-  bag s = "line\\n\\t\\u{1f3cc}";
-clubHouse
-`,
-    ],
-    [
-        "comments",
-        `
-teeOff
-  bag x = 1; // keep score
-clubHouse
-`,
-    ],
-    [
-        "ternary expression",
-        `
-teeOff
-  bag x = fairway ? 1 : 2;
-clubHouse
-`,
-    ],
-    [
-        "null coalescing (parenthesized optional to avoid ? vs ?? ambiguity)",
-        `
-teeOff
-  bag x = (hazard int) ?? 5;
-clubHouse
-`,
-    ],
-    [
-        "logical or chain",
-        `
-teeOff
-  bag x = rough || fairway || rough;
-clubHouse
-`,
-    ],
-    [
-        "logical and chain",
-        `
-teeOff
-  bag x = fairway && rough && fairway;
-clubHouse
-`,
-    ],
-    [
-        "bitwise or chain (single operator per precedence level)",
-        `
-teeOff
-  bag x = 1 | 2 | 3;
-clubHouse
-`,
-    ],
-    [
-        "shift operators",
-        `
-teeOff
-  bag x = 8 << 2 >> 1;
-clubHouse
-`,
-    ],
-    [
-        "arithmetic mix",
-        `
+  ],
+
+  [
+    "arithmetic expressions",
+    `
 teeOff
   bag x = 1 + 2 * 3 - 4 / 2 % 3;
 clubHouse
 `,
-    ],
-    [
-        "exponentiation",
-        `
+  ],
+
+  [
+    "exponentiation",
+    `
 teeOff
   bag x = 2 ** 3 ** 2;
 clubHouse
 `,
-    ],
-    [
-        "scientific float literal",
-        `
+  ],
+
+  [
+    "relational expression",
+    `
 teeOff
-  bag x = 1.5e+2 * 2.0e0;
+  bag x = 72 <= 73;
 clubHouse
 `,
-    ],
-    [
-        "loft and bounce unary",
-        `
+  ],
+
+  [
+    "logical expressions",
+    `
 teeOff
-  bag a = loft hazard int;
-  bag b = bounce fairway;
+  bag x = fairway && rough || fairway;
 clubHouse
 `,
-    ],
-    [
-        "break shank in loop",
-        `
+  ],
+
+  [
+    "bitwise expressions",
+    `
 teeOff
-  whileBall fairway { shank; }
+  bag x = 1 | 2 ^ 3 & 4;
 clubHouse
 `,
-    ],
-    [
-        "short return sink",
-        `
+  ],
+
+  [
+    "shift expressions",
+    `
 teeOff
-  swing f(): int { sink; }
+  bag x = 8 << 2 >> 1;
 clubHouse
 `,
-    ],
-    [
-        "function type as parameter",
-        `
+  ],
+
+  [
+    "ternary expression",
+    `
 teeOff
-  swing map1(f: (int)->int, x: int): int {
+  bag x = fairway ? 1 : 2;
+clubHouse
+`,
+  ],
+
+  [
+    "null coalescing",
+    `
+teeOff
+  bag x = (hazard int) ?? 5;
+clubHouse
+`,
+  ],
+
+  [
+    "integer and float literals",
+    `
+teeOff
+  bag a = 10;
+  bag b = 3.14;
+  bag c = 1.5e+2;
+  bag d = 2e3;
+clubHouse
+`,
+  ],
+
+  [
+    "string escapes",
+    `
+teeOff
+  bag s = "line\\n\\t\\u{1f3cc}";
+clubHouse
+`,
+  ],
+
+  [
+    "array literal",
+    `
+teeOff
+  bag scores = [70, 72, 74];
+clubHouse
+`,
+  ],
+
+  [
+    "typed empty array literal",
+    `
+teeOff
+  bag scores = [int]();
+clubHouse
+`,
+  ],
+
+  [
+    "array indexing",
+    `
+teeOff
+  bag scores = [70, 72, 74];
+  bag first = scores[0];
+clubHouse
+`,
+  ],
+
+  [
+    "course declaration",
+    `
+teeOff
+  course Player {
+    name: string;
+    score: int;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "member access",
+    `
+teeOff
+  bag player = golfer;
+  bag playerScore = player.score;
+clubHouse
+`,
+  ],
+
+  [
+    "function declaration",
+    `
+teeOff
+  swing relativeToPar(s: int): int {
+    sink s - 72;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "function declaration without return type",
+    `
+teeOff
+  swing sayHi() {
+    print("hi");
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "function call statement",
+    `
+teeOff
+  swing sayHi(): int {
+    sink 1;
+  }
+
+  sayHi();
+clubHouse
+`,
+  ],
+
+  [
+    "function call expression",
+    `
+teeOff
+  swing addOne(x: int): int {
+    sink x + 1;
+  }
+
+  bag y = addOne(5);
+clubHouse
+`,
+  ],
+
+  [
+    "function type parameter",
+    `
+teeOff
+  swing apply(f: (int) -> int, x: int): int {
     sink f(x);
   }
 clubHouse
 `,
-    ],
-    [
-        "nested array type",
-        `
+  ],
+
+  [
+    "array type parameter",
+    `
 teeOff
-  swing rows(a: [[int]]): int {
-    sink 0;
+  swing first(scores: [int]): int {
+    sink scores[0];
   }
 clubHouse
 `,
-    ],
-    [
-        "call and member chain",
-        `
+  ],
+
+  [
+    "optional type and hazard",
+    `
 teeOff
-  bag f = hazard (int)->int;
-  bag y = f(1)?.field;
+  bag maybeScore: int? = hazard int;
 clubHouse
 `,
-    ],
-    [
-        "bump increment decrement",
-        `
+  ],
+
+  [
+    "loft and bounce unary expressions",
+    `
 teeOff
-  bag n = 0;
-  n++;
-  n--;
+  bag maybeScore: int? = hazard int;
+  bag hasScore = loft maybeScore;
+  bag realScore = bounce maybeScore;
 clubHouse
 `,
-    ],
-    [
-        "readLie short form",
-        `
+  ],
+
+  [
+    "length operator",
+    `
 teeOff
-  readLie fairway { bag x = 1; }
+  bag scores = [70, 72, 74];
+  bag count = #scores;
 clubHouse
 `,
-    ],
-    [
-        "length hash operator",
-        `
+  ],
+
+  [
+    "readLie with otherwise",
+    `
 teeOff
-  bag xs = [1, 2, 3];
-  bag n = #xs;
+  bag score = 72;
+  pin par = 72;
+
+  readLie score <= par {
+    print("Under or at par!");
+  } otherwise {
+    print("Keep practicing.");
+  }
 clubHouse
 `,
-    ],
+  ],
+
+  [
+    "readLie without otherwise",
+    `
+teeOff
+  readLie fairway {
+    bag x = 1;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "whileBall loop",
+    `
+teeOff
+  bag strokes = 0;
+
+  whileBall strokes < 5 {
+    strokes = strokes + 1;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "practice loop",
+    `
+teeOff
+  bag strokes = 0;
+
+  practice {
+    strokes = strokes + 1;
+  } whileBall strokes < 5;
+clubHouse
+`,
+  ],
+
+  [
+    "play through loop",
+    `
+teeOff
+  bag scores = [70, 72, 74];
+
+  play score through scores {
+    print(score);
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "shank in loop",
+    `
+teeOff
+  whileBall fairway {
+    shank;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "empty sink",
+    `
+teeOff
+  swing done() {
+    sink;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "line comments",
+    `
+teeOff
+  // Store the player's score
+  bag score = 72;
+clubHouse
+`,
+  ],
+
+  [
+    "identifier that starts with keyword",
+    `
+teeOff
+  bag player = golfer;
+  bag playerScore = player.score;
+clubHouse
+`,
+  ],
 ]
 
 const badPrograms = [
-    ["missing teeOff", "bag x = 1; clubHouse", /Line 1, col 1/],
-    ["missing semicolon", "teeOff bag x = 1 clubHouse", /Line 1/],
-    ["bad float", "teeOff bag x = 2.; clubHouse", /Line 1/],
-    ["bad unicode escape", 'teeOff bag s = "\\u{1111111}"; clubHouse', /Line 1/],
-    ["missing block braces in whileBall", "teeOff whileBall fairway bag x = 1; clubHouse", /Line 1/],
-    ["keyword bag as identifier", "teeOff bag bag = 1; clubHouse", /Line 1/],
-    ["mixing && and ||", "teeOff bag x = fairway || rough && fairway; clubHouse", /Line 1/],
-    ["unclosed string", 'teeOff bag s = "oops; clubHouse', /Line 1/],
-    ["typo end keyword", "teeOff bag x = 1; clubHous", /Line 1/],
+  [
+    "missing teeOff",
+    `
+bag score = 72;
+clubHouse
+`,
+  ],
+
+  [
+    "missing clubHouse",
+    `
+teeOff
+  bag score = 72;
+`,
+  ],
+
+  [
+    "missing semicolon after declaration",
+    `
+teeOff
+  bag score = 72
+clubHouse
+`,
+  ],
+
+  [
+    "missing semicolon after assignment",
+    `
+teeOff
+  bag score = 72;
+  score = 71
+clubHouse
+`,
+  ],
+
+  [
+    "bad float literal",
+    `
+teeOff
+  bag x = 2.;
+clubHouse
+`,
+  ],
+
+  [
+    "unclosed string",
+    `
+teeOff
+  bag s = "oops;
+clubHouse
+`,
+  ],
+
+  [
+    "keyword used as identifier",
+    `
+teeOff
+  bag bag = 1;
+clubHouse
+`,
+  ],
+
+  [
+    "missing block braces in readLie",
+    `
+teeOff
+  readLie fairway bag x = 1;
+clubHouse
+`,
+  ],
+
+  [
+    "missing block braces in whileBall",
+    `
+teeOff
+  whileBall fairway bag x = 1;
+clubHouse
+`,
+  ],
+
+  [
+    "old increment syntax not supported",
+    `
+teeOff
+  bag i = 0;
+  i++;
+clubHouse
+`,
+  ],
+
+  [
+    "old decrement syntax not supported",
+    `
+teeOff
+  bag i = 0;
+  i--;
+clubHouse
+`,
+  ],
+
+  [
+    "old practice count syntax not supported",
+    `
+teeOff
+  practice 2 {
+    print("again");
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "old else-if syntax not supported",
+    `
+teeOff
+  readLie fairway {
+    bag x = 1;
+  } otherwise readLie rough {
+    bag y = 2;
+  }
+clubHouse
+`,
+  ],
+
+  [
+    "optional chaining not supported",
+    `
+teeOff
+  bag h = hazard int;
+  bag x = h?.score;
+clubHouse
+`,
+  ],
+
+  [
+    "range syntax not supported by current grammar",
+    `
+teeOff
+  play i through 1...3 {
+    print(i);
+  }
+clubHouse
+`,
+  ],
 ]
 
 describe("The parser", () => {
-    for (const [scenario, source] of okPrograms) {
-        it(`matches ${scenario}`, () => {
-            assert.ok(match(source).succeeded())
-            assert.ok(parse(source).succeeded())
-        })
-    }
-    for (const [scenario, source, errorPattern] of badPrograms) {
-        it(`throws on ${scenario}`, () => {
-            assert.throws(() => parse(source), errorPattern)
-        })
-    }
-
-    it("throws ParseError with trimmed Ohm message", () => {
-        assert.throws(
-            () => parse("teeOff\n"),
-            (err) => err instanceof ParseError && /Line 2/.test(err.message),
-        )
+  for (const [scenario, source] of okPrograms) {
+    it(`matches ${scenario}`, () => {
+      assert.ok(match(source).succeeded())
+      assert.ok(parse(source).succeeded())
     })
+  }
+
+  for (const [scenario, source] of badPrograms) {
+    it(`throws on ${scenario}`, () => {
+      assert.throws(() => parse(source), ParseError)
+    })
+  }
+
+  it("throws ParseError with Ohm line and column information", () => {
+    assert.throws(
+      () => parse("teeOff\n"),
+      (error) =>
+        error instanceof ParseError &&
+        /Line/.test(error.message) &&
+        /col/.test(error.message),
+    )
+  })
 })

@@ -31,7 +31,7 @@ ThreeDTee {
   Block = "{" Statement* "}"
 
   AssignStmt = Exp9 "=" Exp ";"
-  CallStmt = Exp9Call ";"
+  CallStmt = Exp13 ";"
 
   IfStmt
     = "readLie" Exp Block "otherwise" Block      --long
@@ -139,16 +139,19 @@ ThreeDTee {
   mulop = "*" | "/" | "%"
   prefixop = "-" | "!" | "#" | "loft" | "bounce"
 
-  id = ~keyword letter idchar*
-  idchar = letter | digit | "_"
+id = ~keyword letter idchar*
+idchar = letter | digit | "_"
 
-  keyword
-    = "teeOff" | "clubHouse"
-    | "bag" | "pin" | "course" | "swing"
-    | "readLie" | "otherwise" | "whileBall" | "practice" | "play" | "through"
-    | "shank" | "sink"
-    | "fairway" | "rough" | "hazard" | "loft" | "bounce"
-    | "int" | "float" | "bool" | "string"
+keyword
+  = reservedWord ~idchar
+
+reservedWord
+  = "teeOff" | "clubHouse"
+  | "bag" | "pin" | "course" | "swing"
+  | "readLie" | "otherwise" | "whileBall" | "practice" | "play" | "through"
+  | "shank" | "sink"
+  | "fairway" | "rough" | "hazard" | "loft" | "bounce"
+  | "int" | "float" | "bool" | "string"
 
   intlit = digit+
 

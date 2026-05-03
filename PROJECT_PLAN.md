@@ -2,30 +2,31 @@
 
 **Course:** CMSI 3802 Languages and Automata II — Homework #1
 **Due:** 2026-05-04
-**Team:** Derek Lanz, Daniel Lee, Devan Joaquin Abiva, Trevor Leung
-**Repo:** https://github.com/dlanz1/plangfinallanguage
+**Team:** Derek Lanz, Daniel Lee, Devan Joaquin Abiva, Trevor Leung, Bill Nguyen
+**Repo:** https://github.com/dlanz1/3DTee (canonical remote; older `plangfinallanguage` URL may still appear in legacy notes)
 
 This plan is derived directly from the assignment PDF and mapped against the current state of the repo. Items already done are marked `[x]`; outstanding items are `[ ]`. "Current state" notes call out what needs to change.
 
 ---
 
-## 0. Status Snapshot (as of 2026-04-22)
+## 0. Status Snapshot (as of 2026-05-02)
 
 | Area | Status |
 |---|---|
 | Team formed (3–6 students) | Done — 4 members |
-| Logo | Done (`3DTee Logo.svg`) |
-| Ohm grammar | In progress — `src/3DTee.ohm` has substantive content |
-| Parser | In progress — `src/parser.js` implemented |
-| Analyzer / Optimizer / Generator | Stubs only (~85 bytes each) |
-| Core AST module | Empty (`src/core.js`) |
-| Tests | Parser suite started; analyzer/optimizer/generator/compiler empty |
-| README | Good draft — missing companion-site link & static-constraints list |
-| Examples folder | **Missing** |
+| Logo | Done (`3DTee-Logo.svg`) |
+| Ohm grammar | In progress — `src/3DTee.ohm` has substantive golf-keyword syntax |
+| Parser | **Working** — `src/parser.js` loads Ohm grammar; exposes `match` / `parse`; syntax errors include line/column (Ohm message) |
+| Analyzer / Optimizer / Generator | Stubs only (`throw` / not implemented); pipeline calls them after parse |
+| Core AST module | **Scaffolded** — `src/core.js` exports placeholder node classes; **no** real AST construction from parse yet |
+| Tests | Parser suite expanded (`test/parser.test.js`); analyzer/optimizer/generator tests are `it.todo` placeholders; `compiler.test.js` is minimal smoke |
+| README | Good baseline content; companion-site link & static-constraints list still TODO |
+| Examples folder | **Present** — five syntax-valid `.3dt` files under `examples/` (parse-level only until analyzer exists) |
 | Docs folder | **Missing** |
-| Companion website (GH Pages) | **Not started** |
+| Companion website (GitHub Pages) | **Not started** |
 | Presentation / slides | **Not started** |
-| `.gitignore` hygiene | Needs work — `.DS_Store` and `node_modules` committed |
+| `.gitignore` hygiene | Improved (`.DS_Store`, `.env*`, editor dirs, etc.); confirm no stray `node_modules`/`.DS_Store` **committed** on fresh clone |
+| Legacy cleanup | Top-level `index.js` and root `grammar.ohm` **removed**; authoritative grammar is `src/3DTee.ohm` |
 
 ---
 
@@ -96,13 +97,13 @@ src/
 ### 3.1 CLI & Pipeline (`3DTee.js` + `compiler.js`)
 
 - [x] CLI entry `src/3DTee.js` exists
-- [ ] CLI supports `parsed`, `analyzed`, `optimized`, `js` output modes (mirrors Carlos)
-- [ ] `syntax-check` / `parse` mode callable from CLI
-- [ ] Clean error reporting from CLI (source location + message, no stack dumps for user errors)
-- [ ] `compiler.js` orchestrates: parse → analyze → optimize → generate
-- [ ] Exit codes are sane (0 success, non-zero on error)
+- [x] CLI accepts `parsed`, `analyzed`, `optimized`, `js` (`parsed` succeeds on valid source; later modes fail until analyzer/optimizer/generator exist)
+- [x] Parse / syntax-check via `parsed` mode
+- [ ] Clean error reporting from CLI (line/column + message for all expected failures; no stack dumps) — partial today
+- [x] `compiler.js` wires parse → analyze → optimize → generate (stubs throw after parse for non-`parsed` modes)
+- [ ] Exit codes consistently sane (0 success, non-zero on error) — verify across all modes
 
-### 3.2 Core AST (`core.js`) — currently empty
+### 3.2 Core AST (`core.js`) — scaffolded, not semantic yet
 
 - [ ] Define node classes / factories used across analyzer, optimizer, generator:
   - [ ] Program, Block
@@ -114,12 +115,13 @@ src/
   - [ ] Expressions: BinaryExpr, UnaryExpr, TernaryExpr, Call, Subscript, MemberAccess, Identifier, literals, ArrayExpr, EmptyArrayExpr
   - [ ] Built-ins (`print`, `random`, etc.)
 - [ ] Export everything the analyzer and generator will import
+- [x] Placeholder exports exist in `src/core.js` (replace/extend with real AST as semantics are implemented)
 
 ### 3.3 Parser (`parser.js`)
 
 - [x] Loads `3DTee.ohm`
-- [ ] Exposes `match(source)` / `parse(source)` returning either a match or a structured syntax error
-- [ ] Syntax errors include line/column and a helpful message
+- [x] Exposes `match(source)` / `parse(source)` (`parse` throws on failure with Ohm message)
+- [x] Syntax errors include line/column (via Ohm failure message)
 
 ### 3.4 Analyzer (`analyzer.js`) — must be substantial
 
@@ -172,11 +174,11 @@ The assignment explicitly calls out the statics as where the "significant work" 
 
 Using Node's built-in test runner + `c8`. The spec is blunt: 100% or lose points.
 
-- [ ] `test/parser.test.js` — grammar acceptance/rejection (already started)
-- [ ] `test/analyzer.test.js` — one test per static rule, both pass and fail
-- [ ] `test/optimizer.test.js` — one test per optimization
-- [ ] `test/generator.test.js` — golden-output tests for each syntactic form
-- [ ] `test/compiler.test.js` — end-to-end with at least one sample from `examples/`
+- [x] `test/parser.test.js` — grammar acceptance/rejection (expanded for current `3DTee.ohm` shapes)
+- [ ] `test/analyzer.test.js` — one test per static rule, both pass and fail (currently TODO placeholders only)
+- [ ] `test/optimizer.test.js` — one test per optimization (TODO placeholders only)
+- [ ] `test/generator.test.js` — golden-output tests for each syntactic form (TODO placeholders only)
+- [ ] `test/compiler.test.js` — end-to-end with at least one sample from `examples/` (smoke test only today)
 - [ ] **≥ 50 tests total** (5 pt gate, all-or-nothing)
 - [ ] Aim for "hundreds of tests" (checklist item)
 - [ ] `npm test` runs the suite **and** reports coverage out of the box
@@ -214,20 +216,21 @@ Target tree (per spec):
     └── generator.test.js
 ```
 
-- [ ] Remove committed `.DS_Store`
-- [ ] Remove committed `node_modules/`
-- [ ] Regenerate `.gitignore` using GitHub's Node template (add `.DS_Store`, `node_modules/`, `coverage/`, `.env`)
-- [ ] Decide fate of top-level `index.js` and `grammar.ohm` — if they duplicate `src/`, delete; if they're needed, document why
+- [ ] Remove committed `.DS_Store` (if any appear — verify on clone)
+- [ ] Remove committed `node_modules/` (if any appear — verify on clone)
+- [x] `.gitignore` expanded (`.DS_Store`, `node_modules/`, `coverage/`, `.env*`, editor dirs, logs, etc.)
+- [x] Top-level duplicate `index.js` and `grammar.ohm` **removed**; `src/3DTee.ohm` is authoritative
 - [ ] Create `docs/` (for website + logo + slides)
-- [ ] Create `examples/` (see §6)
-- [ ] Confirm repo name matches language name — **current repo is `plangfinallanguage`, language is `3DTee`.** Either rename the repo or decide this is acceptable (flag with instructor)
+- [x] Create `examples/` (see §6) — five starter programs present; expand + semantic correctness still TODO
+- [x] Public GitHub repo is **`3DTee`** under `dlanz1` (align any remaining `plangfinallanguage` references)
 - [ ] `package.json`:
-  - [ ] `name` is `3DTee` (or suitable slug)
-  - [ ] `author` lists all 4 team members
-  - [ ] `"type": "module"`
-  - [ ] `repository` field present
-  - [ ] `scripts.test` runs tests + coverage
-  - [ ] `description`, `keywords`, `license`, `bugs`, `homepage` all filled
+  - [x] `name` is suitable slug (`3dtee`)
+  - [ ] `author` lists all 4 team members by name (currently generic placeholder)
+  - [x] `"type": "module"`
+  - [x] `repository` / `bugs` / `homepage` point at `3DTee` repo
+  - [x] `scripts.test` runs tests + coverage (`c8 node --test …`)
+  - [x] `description`, `keywords` partially filled — tighten to assignment expectations
+  - [ ] `license` field semantics vs `LICENSE` file (verify ISC vs file text if required)
 - [ ] Run Prettier across entire repo; add `.prettierrc.json` if useful
 - [ ] Confirm clone → `npm install` → `npm test` works from a clean machine
 
@@ -235,19 +238,20 @@ Target tree (per spec):
 
 ## 6. Example Programs (`examples/`)
 
-- [ ] **≥ 5 full, semantically correct example programs**
-- [ ] Collectively cover **every syntactic form** in the grammar
+- [x] **≥ 5** example files present (`scorecard`, `handicap`, `tee_time`, `leaderboard`, `course_stats`)
+- [ ] **Semantically correct** once analyzer exists (today: parse-valid only)
+- [ ] Collectively cover **every syntactic form** in the grammar (expand set)
 - [ ] Cover most/all interesting semantic checks (types, optionals, structs, control flow)
-- [ ] Golf-theme flavor (keeps the brand consistent)
-- [ ] Each example has a one-line comment at top describing what it demonstrates
+- [x] Golf-theme flavor (keeps the brand consistent)
+- [x] Each example has a one-line comment at top describing what it demonstrates
 - [ ] At least 2 examples are also embedded in README ("3DTee on left, JS on right")
 
 Suggested programs:
-- [ ] `scorecard.3dt` — structs, arrays, for-each loops
-- [ ] `handicap.3dt` — functions, type inference, arithmetic
-- [ ] `tee_time.3dt` — optionals, `??`, conditionals
-- [ ] `leaderboard.3dt` — sorting/iteration with ranges, `for in`
-- [ ] `course_stats.3dt` — string handling, Unicode, print
+- [x] `scorecard.3dt` — structs, arrays, for-each loops
+- [x] `handicap.3dt` — functions, type inference, arithmetic
+- [x] `tee_time.3dt` — optionals, `??`, conditionals
+- [x] `leaderboard.3dt` — sorting/iteration with ranges, `for in`
+- [x] `course_stats.3dt` — string handling, Unicode, print
 - [ ] `caddie.3dt` — first-class functions, function-typed params
 
 ---
@@ -335,17 +339,18 @@ Text submission must contain:
 
 ---
 
-## Suggested Two-Week Timeline (12 days remaining)
+## Suggested timeline (from status date → due 2026-05-04)
 
-| Days | Focus |
+| Window | Focus |
 |---|---|
-| 04-22 → 04-24 | Finalize grammar + `core.js` AST; flesh out analyzer; start writing example programs |
-| 04-25 → 04-27 | Finish analyzer + its full test suite; start generator with golden tests |
-| 04-28 → 04-29 | Optimizer + tests; push coverage to 100%; clean up repo hygiene |
-| 04-30 → 05-01 | Companion site (GH Pages), README polish, finalize all 5+ examples |
-| 05-02 | Slides, rehearsal, submission text, fresh-clone QA |
-| 05-03 | Buffer / fixes |
-| 05-04 | Submit |
+| 05-02 → 05-03 | Real AST from parse + analyzer skeleton → core static checks; grow `compiler.test.js` |
+| 05-03 | Generator MVP (subset) + golden tests; keep parser/examples aligned |
+| 05-03 → 05-04 | Optimizer subset + per-opt tests; chase coverage toward 100% |
+| 05-04 (AM) | `docs/` + GH Pages; README static list + side-by-side examples + sample JS |
+| 05-04 (PM) | Slides committed; fresh-clone QA; submission text |
+| Post-submit | Buffer only if allowed by instructor |
+
+*(Original April timeline superseded — adjust with team if dates slip.)*
 
 ---
 
@@ -353,6 +358,6 @@ Text submission must contain:
 
 - **Analyzer underscoped** — highest risk; spec demands "significant work" in statics. Keep the check list in §3.4 honest.
 - **Optimization set un-negotiated** — confirm with instructor this week or risk surprise grading.
-- **Repo name ≠ language name** — flag early; cheap to fix if instructor wants it.
+- **Repo naming** — public repo is `3DTee`; keep README/plan/instructor-facing links consistent (`plangfinallanguage` is legacy only).
 - **Coverage gap** — anything less than 100% forfeits points; plan tests alongside implementation, not after.
 - **Uneven contributions** — instructor interviews each member; make sure everyone owns a real slice of the code and can speak to it.

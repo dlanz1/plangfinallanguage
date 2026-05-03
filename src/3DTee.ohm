@@ -1,123 +1,160 @@
 ThreeDTee {
-  Program     = "teeOff" Statement* "clubHouse"
+  Program = "teeOff" Statement* "clubHouse"
 
-  Statement   = VarDecl
-              | TypeDecl
-              | FunDecl
-              | Exp9 ("++" | "--") ";"                         --bump
-              | Exp9 "=" Exp ";"                               --assign
-              | Exp9_call ";"                                  --call
-              | shank ";"                                      --break
-              | sink Exp ";"                                   --return
-              | sink ";"                                       --shortreturn
-              | IfStmt
-              | LoopStmt
-              | Block                                          --block
+  Statement
+    = VarDecl
+    | ConstDecl
+    | CourseDecl
+    | SwingDecl
+    | AssignStmt
+    | CallStmt
+    | IfStmt
+    | WhileStmt
+    | PracticeStmt
+    | ForStmt
+    | BreakStmt
+    | ReturnStmt
 
-  VarDecl     = (bag | pin) id "=" Exp ";"
-  TypeDecl    = course id "{" Field* "}"
-  Field       = id ":" Type
-  FunDecl     = swing id Params (":" Type)? Block
-  Params      = "(" ListOf<Param, ","> ")"
-  Param       = id ":" Type
+  VarDecl = "bag" id TypeAnn? "=" Exp ";"
+  ConstDecl = "pin" id TypeAnn? "=" Exp ";"
 
-  Type        = Type "?"                                       --optional
-              | "[" Type "]"                                   --array
-              | "(" ListOf<Type, ","> ")" "->" Type            --function
-              | id                                             --id
+  TypeAnn = ":" Type
 
-  IfStmt      = readLie Exp Block otherwise Block              --long
-              | readLie Exp Block otherwise IfStmt             --elsif
-              | readLie Exp Block                              --short
+  CourseDecl = "course" id "{" Field* "}"
+  Field = id ":" Type ";"
 
-  LoopStmt    = whileBall Exp Block                            --while
-              | practice Exp Block                             --repeat
-              | play id through Exp ("..." | "..<") Exp Block  --range
-              | play id through Exp Block                      --collection
+  SwingDecl = "swing" id Params ReturnType? Block
+  Params = "(" ListOf<Param, ","> ")"
+  Param = id ":" Type
+  ReturnType = ":" Type
 
-  Block       = "{" Statement* "}"
+  Block = "{" Statement* "}"
 
-  Exp         = Exp1 "?" Exp1 ":" Exp                          --conditional
-              | Exp1
+  AssignStmt = Exp9 "=" Exp ";"
+  CallStmt = Exp9_call ";"
 
-  Exp1        = Exp1 "??" Exp2                                 --unwrapelse
-              | Exp2
+  IfStmt
+    = "readLie" Exp Block "otherwise" Block      --long
+    | "readLie" Exp Block                        --short
 
-  Exp2        = Exp3 ("||" Exp3)+                              --or
-              | Exp3 ("&&" Exp3)+                              --and
-              | Exp3
+  WhileStmt = "whileBall" Exp Block
+  PracticeStmt = "practice" Block "whileBall" Exp ";"
 
-  Exp3        = Exp4 ("|" Exp4)+                               --bitor
-              | Exp4 ("^" Exp4)+                               --bitxor
-              | Exp4 ("&" Exp4)+                               --bitand
-              | Exp4
+  ForStmt
+    = "play" id "through" Exp Block
 
-  Exp4        = Exp5 ("<=" | "<" | "==" | "!=" | ">=" | ">") Exp5 --compare
-              | Exp5
+  BreakStmt = "shank" ";"
 
-  Exp5        = Exp5 ("<<" | ">>") Exp6                        --shift
-              | Exp6
+  ReturnStmt
+    = "sink" Exp ";"                             --value
+    | "sink" ";"                                 --empty
 
-  Exp6        = Exp6 ("+" | "-") Exp7                          --add
-              | Exp7
+  Type
+    = Type "?"                                   --optional
+    | "[" Type "]"                               --array
+    | "(" ListOf<Type, ","> ")" "->" Type        --function
+    | "int"                                      --int
+    | "float"                                    --float
+    | "bool"                                     --bool
+    | "string"                                   --string
+    | id                                         --id
 
-  Exp7        = Exp7 ("*" | "/" | "%") Exp8                    --multiply
-              | Exp8
+  Exp = Exp1 "?" Exp ":" Exp                     --conditional
+      | Exp1
 
-  Exp8        = Exp9 "**" Exp8                                 --power
-              | Exp9
-              | ("#" | "-" | "!" | loft | bounce) Exp9        --unary
+  Exp1 = Exp1 "??" Exp2                         --coal
+       | Exp2
 
-  Exp9        = fairway ~mut
-              | rough ~mut
-              | floatlit ~mut
-              | intlit ~mut
-              | hazard Type ~mut                               --emptyopt
-              | Exp9 "(" ListOf<Exp, ","> ")" ~mut            --call
-              | Exp9 "[" Exp "]"                              --subscript
-              | Exp9 ("." | "?.") id                          --member
-              | stringlit ~mut
-              | id                                            --id
-              | Type_array "(" ")" ~mut                       --emptyarray
-              | "[" NonemptyListOf<Exp, ","> "]" ~mut         --arrayexp
-              | "(" Exp ")" ~mut                              --parens
+  Exp2 = Exp2 "||" Exp3                         --or
+       | Exp3
 
-  intlit      = digit+
-  floatlit    = digit+ "." digit+ (("E" | "e") ("+" | "-")? digit+)? 
+  Exp3 = Exp3 "&&" Exp4                         --and
+       | Exp4
 
-  stringlit   = "\"" char* "\""
-  char        = ~control ~"\\" ~"\"" any
-              | "\\" ("n" | "t" | "\"" | "\\")                --escape
-              | "\\u{" hex hex? hex? hex? hex? hex? "}"       --codepoint
+  Exp4 = Exp4 "|" Exp5                          --bitor
+       | Exp5
 
-  control     = "\x00".."\x1f" | "\x80".."\x9f"
-  hex         = hexDigit
-  mut         = ~"==" "=" | "++" | "--"
+  Exp5 = Exp5 "^" Exp6                          --bitxor
+       | Exp6
 
-  bag         = "bag" ~alnum
-  pin         = "pin" ~alnum
-  course      = "course" ~alnum
-  swing       = "swing" ~alnum
-  readLie     = "readLie" ~alnum
-  otherwise   = "otherwise" ~alnum
-  whileBall   = "whileBall" ~alnum
-  practice    = "practice" ~alnum
-  play        = "play" ~alnum
-  through     = "through" ~alnum
-  bounce      = "bounce" ~alnum
-  loft        = "loft" ~alnum
-  shank       = "shank" ~alnum
-  sink        = "sink" ~alnum
-  landed      = "landed" ~alnum
-  hazard      = "hazard" ~alnum
-  fairway     = "fairway" ~alnum
-  rough       = "rough" ~alnum
+  Exp6 = Exp6 "&" Exp7                          --bitand
+       | Exp7
 
-  keyword     = bag | pin | course | swing | readLie | otherwise
-              | whileBall | practice | play | through | bounce
-              | loft | shank | sink | landed | hazard | fairway | rough
+  Exp7 = Exp8 relop Exp8                        --compare
+       | Exp8
 
-  id          = ~keyword letter alnum*
+  Exp8 = Exp8 shiftop Exp9                      --shift
+       | Exp9
 
-  space      += "//" (~"\n" any)*                             --comment
+  Exp9 = Exp9 addop Exp10                       --add
+       | Exp10
+
+  Exp10 = Exp10 mulop Exp11                     --mul
+        | Exp11
+
+  Exp11 = Exp12 "**" Exp11                      --power
+        | Exp12
+
+  Exp12 = prefixop Exp12                        --prefix
+        | Exp13
+
+  Exp13 = Exp13 "[" Exp "]"                     --subscript
+        | Exp13 "." id                          --member
+        | Exp13 "(" ListOf<Exp, ","> ")"        --call
+        | Primary
+
+  Exp9_call = Exp13 "(" ListOf<Exp, ","> ")"
+
+  Primary
+    = floatlit
+    | intlit
+    | stringlit
+    | "fairway"                                 --true
+    | "rough"                                   --false
+    | "hazard" Type                             --emptyoptional
+    | ArrayLit
+    | EmptyArrayLit
+    | id
+    | "(" Exp ")"
+
+  ArrayLit = "[" ListOf<Exp, ","> "]"
+  EmptyArrayLit = "[" Type "]" "(" ")"
+
+  relop = "<=" | "<" | ">=" | ">" | "==" | "!="
+  shiftop = "<<" | ">>"
+  addop = "+" | "-"
+  mulop = "*" | "/" | "%"
+  prefixop = "-" | "!" | "#" | "loft" | "bounce"
+
+  id = ~keyword letter idchar*
+  idchar = letter | digit | "_"
+
+  keyword
+    = "teeOff" | "clubHouse"
+    | "bag" | "pin" | "course" | "swing"
+    | "readLie" | "otherwise" | "whileBall" | "practice" | "play" | "through"
+    | "shank" | "sink"
+    | "fairway" | "rough" | "hazard" | "loft" | "bounce"
+    | "int" | "float" | "bool" | "string"
+
+  intlit = digit+
+  floatlit
+    = digit+ "." digit+ exponent?
+    | digit+ exponent
+
+  exponent = ("e" | "E") ("+" | "-")? digit+
+
+  stringlit = "\"" stringchar* "\""
+  stringchar
+    = escape
+    | ~"\\" ~"\"" any
+
+  escape
+    = "\\" ("n" | "t" | "\"" | "\\" )
+    | "\\u{" hexDigit+ "}"
+
+  hexDigit = digit | "a".."f" | "A".."F"
+
+  space += comment
+  comment = "//" (~"\n" any)*
 }

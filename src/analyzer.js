@@ -1,4 +1,5 @@
 import * as core from "./core.js"
+import { CompileUserError } from "./errors.js"
 
 function equivalent(t1, t2) {
   return (
@@ -73,6 +74,7 @@ class Context {
 
   static root() {
     const context = new Context({ locals: new Map() })
+
     for (const [name, entity] of Object.entries(core.standardLibrary)) {
       context.add(name, {
         kind: "Function",
@@ -81,6 +83,7 @@ class Context {
         mutable: false,
       })
     }
+
     return context
   }
 
@@ -92,13 +95,13 @@ class Context {
 function must(condition, message, errorLocation) {
   if (!condition) {
     const prefix = errorLocation.at.source.getLineAndColumnMessage()
-    throw new Error(`${prefix}${message}`)
+    throw new CompileUserError(`${prefix}${message}`)
   }
 }
 
 Object.assign(must, {
   notAlreadyBeDeclared(context, name, at) {
-    must(!context.lookup(name), `Identifier ${name} already declared`, at)
+    must(!context.locals.has(name), `Identifier ${name} already declared`, at)
   },
 
   haveBeenFound(entity, name, at) {
@@ -115,10 +118,6 @@ Object.assign(must, {
 
   haveBooleanType(e, at) {
     must(e.type === core.boolType, "Expected a boolean", at)
-  },
-
-  haveStringType(e, at) {
-    must(e.type === core.stringType, "Expected a string", at)
   },
 
   haveNumericOrStringType(e, at) {
@@ -153,6 +152,7 @@ Object.assign(must, {
       t?.kind === "OptionalType" ||
       t?.kind === "FunctionType" ||
       t?.kind === "Type"
+
     must(isType, "Type expected", at)
   },
 
@@ -296,14 +296,6 @@ export default function analyze(match) {
 
       const courseType = new core.Type(id.sourceString)
       courseType.course = null
-
-      const courseEntity = {
-        kind: "Course",
-        name: id.sourceString,
-        type: courseType,
-        mutable: false,
-      }
-
       context.add(id.sourceString, courseType)
 
       const fieldList = fields.children.map(f => f.rep())
@@ -311,7 +303,6 @@ export default function analyze(match) {
 
       const course = new core.CourseDeclaration(id.sourceString, fieldList)
       courseType.course = course
-      courseEntity.type = courseType
 
       return course
     },
@@ -817,6 +808,7 @@ export default function analyze(match) {
 
     Primary_string(stringlit) {
       const source = stringlit.sourceString
+
       for (const match of source.matchAll(/\\u\{([0-9a-fA-F]+)\}/g)) {
         const codePoint = Number.parseInt(match[1], 16)
         must(codePoint <= 0x10ffff, "Invalid unicode escape", { at: stringlit })
@@ -840,9 +832,9 @@ export default function analyze(match) {
     },
 
     Primary_emptyoptional(_hazard, type) {
-      const optionalType = new core.OptionalType(type.rep())
-      const node = new core.EmptyOptionalExpression(type.rep())
-      node.type = optionalType
+      const baseType = type.rep()
+      const node = new core.EmptyOptionalExpression(baseType)
+      node.type = new core.OptionalType(baseType)
       return node
     },
 
@@ -877,7 +869,7 @@ export default function analyze(match) {
       return node
     },
 
-    EmptyArrayLit(_open, type, _close, _openParen, _closeParen) {
+    EmptyArrayLit(_openBracket, type, _closeBracket, _openParen, _closeParen) {
       const baseType = type.rep()
       const node = new core.EmptyArrayLiteral(baseType)
       node.type = new core.ArrayType(baseType)

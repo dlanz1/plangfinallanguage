@@ -69,7 +69,7 @@ clubHouse
     assert.equal(
       compiled,
       `function relativeToPar(score) {
-return (score - 72);
+  return (score - 72);
 }
 let result = relativeToPar(70);
 console.log(result);`,

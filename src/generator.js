@@ -1,7 +1,10 @@
-import { voidType } from "./core.js"
-
 export default function generate(program) {
   const output = []
+  let depth = 0
+
+  const push = line => {
+    output.push("  ".repeat(depth) + line)
+  }
 
   const gen = node => {
     if (node == null) return ""
@@ -9,18 +12,17 @@ export default function generate(program) {
   }
 
   function emitBlock(block) {
+    depth++
     block.statements.forEach(gen)
-  }
-
-  function parenthesize(expression) {
-    return `(${expression})`
+    depth--
   }
 
   function generateBinaryExpression(expression) {
-    const op = {
-      "==": "===",
-      "!=": "!==",
-    }[expression.op] ?? expression.op
+    const op =
+      {
+        "==": "===",
+        "!=": "!==",
+      }[expression.op] ?? expression.op
 
     return `(${gen(expression.left)} ${op} ${gen(expression.right)})`
   }
@@ -35,23 +37,25 @@ export default function generate(program) {
     },
 
     VariableDeclaration(declaration) {
-      output.push(`let ${declaration.id} = ${gen(declaration.initializer)};`)
+      push(`let ${declaration.id} = ${gen(declaration.initializer)};`)
     },
 
     ConstantDeclaration(declaration) {
-      output.push(`const ${declaration.id} = ${gen(declaration.initializer)};`)
+      push(`const ${declaration.id} = ${gen(declaration.initializer)};`)
     },
 
     CourseDeclaration(declaration) {
-      output.push(`class ${declaration.id} {`)
-      output.push(`  constructor(${declaration.fields.map(field => field.id).join(", ")}) {`)
+      push(`class ${declaration.id} {`)
+      push(
+        `  constructor(${declaration.fields.map(field => gen(field)).join(", ")}) {`,
+      )
 
       for (const field of declaration.fields) {
-        output.push(`    this.${field.id} = ${field.id};`)
+        push(`    this.${field.id} = ${field.id};`)
       }
 
-      output.push("  }")
-      output.push("}")
+      push("  }")
+      push("}")
     },
 
     Field(field) {
@@ -59,11 +63,11 @@ export default function generate(program) {
     },
 
     FunctionDeclaration(declaration) {
-      output.push(
-        `function ${declaration.id}(${declaration.params.map(param => param.id).join(", ")}) {`,
+      push(
+        `function ${declaration.id}(${declaration.params.map(param => gen(param)).join(", ")}) {`,
       )
       emitBlock(declaration.body)
-      output.push("}")
+      push("}")
     },
 
     Parameter(parameter) {
@@ -71,53 +75,53 @@ export default function generate(program) {
     },
 
     AssignmentStatement(statement) {
-      output.push(`${gen(statement.target)} = ${gen(statement.source)};`)
+      push(`${gen(statement.target)} = ${gen(statement.source)};`)
     },
 
     CallStatement(statement) {
-      output.push(`${gen(statement.call)};`)
+      push(`${gen(statement.call)};`)
     },
 
     IfStatement(statement) {
-      output.push(`if (${gen(statement.test)}) {`)
+      push(`if (${gen(statement.test)}) {`)
       emitBlock(statement.consequent)
 
       if (statement.alternate) {
-        output.push("} else {")
+        push("} else {")
         emitBlock(statement.alternate)
-        output.push("}")
+        push("}")
       } else {
-        output.push("}")
+        push("}")
       }
     },
 
     WhileStatement(statement) {
-      output.push(`while (${gen(statement.test)}) {`)
+      push(`while (${gen(statement.test)}) {`)
       emitBlock(statement.body)
-      output.push("}")
+      push("}")
     },
 
     PracticeStatement(statement) {
-      output.push("do {")
+      push("do {")
       emitBlock(statement.body)
-      output.push(`} while (${gen(statement.test)});`)
+      push(`} while (${gen(statement.test)});`)
     },
 
     ForStatement(statement) {
-      output.push(`for (let ${statement.iterator} of ${gen(statement.collection)}) {`)
+      push(`for (let ${statement.iterator} of ${gen(statement.collection)}) {`)
       emitBlock(statement.body)
-      output.push("}")
+      push("}")
     },
 
     BreakStatement() {
-      output.push("break;")
+      push("break;")
     },
 
     ReturnStatement(statement) {
       if (statement.expression) {
-        output.push(`return ${gen(statement.expression)};`)
+        push(`return ${gen(statement.expression)};`)
       } else {
-        output.push("return;")
+        push("return;")
       }
     },
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import generate from "../src/generator.js"
 import optimize from "../src/optimizer.js"
 import analyze from "../src/analyzer.js"
+import * as core from "../src/core.js"
 import { parse } from "../src/parser.js"
 
 function dedent(s) {
@@ -248,12 +249,18 @@ console.log(count);
     name: "ternary expression",
     source: `
 teeOff
-  bag score = fairway ? 72 : 100;
+  swing cond(): bool {
+    sink fairway;
+  }
+  bag score = cond() ? 72 : 100;
   print(score);
 clubHouse
 `,
     expected: dedent`
-let score = 72;
+function cond() {
+  return true;
+}
+let score = (cond() ? 72 : 100);
 console.log(score);
 `,
   },
@@ -273,6 +280,44 @@ while (true) {
 }
 `,
   },
+
+  {
+    name: "course class, float literal, and non-print call",
+    source: `
+teeOff
+  course Player {
+    score: int;
+  }
+  swing bump(z: float): float {
+    sink z + 0.5;
+  }
+  bag player = Player;
+  bag rating = bump(2.5);
+  bag n = 1;
+  bag neg = -n;
+  bag b = fairway;
+  bag notb = !b;
+  print(player.score);
+clubHouse
+`,
+    expected: dedent`
+class Player {
+  constructor(score) {
+    this.score = score;
+  }
+}
+function bump(z) {
+  return (z + 0.5);
+}
+let player = Player;
+let rating = bump(2.5);
+let n = 1;
+let neg = -(n);
+let b = true;
+let notb = !(b);
+console.log(player.score);
+`,
+  },
 ]
 
 describe("The code generator", () => {
@@ -281,4 +326,21 @@ describe("The code generator", () => {
       assert.equal(compile(fixture.source), fixture.expected)
     })
   }
+
+  it("generates a Block statement node at program top level", () => {
+    const init = new core.IntegerLiteral(1n)
+    init.type = core.intType
+    const decl = new core.VariableDeclaration("x", core.intType, init)
+    const prog = new core.Program([new core.Block([decl])])
+    assert.equal(generate(prog), "  let x = 1;")
+  })
+
+  it("generates unary operators not special-cased by name", () => {
+    const operand = new core.IdentifierExpression("x")
+    operand.type = core.intType
+    const u = new core.UnaryExpression("~", operand)
+    u.type = core.intType
+    const prog = new core.Program([new core.VariableDeclaration("y", core.intType, u)])
+    assert.equal(generate(prog), "let y = ~(x);")
+  })
 })

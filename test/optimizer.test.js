@@ -98,6 +98,8 @@ function block(statements) {
 const x = id("x", core.intType)
 const y = id("y", core.intType)
 const xs = id("xs", new core.ArrayType(core.intType))
+const xf = id("xf", core.floatType)
+const mopt = id("mopt", new core.OptionalType(core.intType))
 
 const tests = [
   ["folds integer +", binary("+", int(5), int(8), core.intType), int(13)],
@@ -158,6 +160,30 @@ const tests = [
   ],
 
   [
+    "optimizes x || true",
+    binary("||", y, bool(true), core.boolType),
+    bool(true),
+  ],
+
+  [
+    "optimizes true || x",
+    binary("||", bool(true), y, core.boolType),
+    bool(true),
+  ],
+
+  [
+    "optimizes x && false",
+    binary("&&", y, bool(false), core.boolType),
+    bool(false),
+  ],
+
+  [
+    "optimizes false && x",
+    binary("&&", bool(false), y, core.boolType),
+    bool(false),
+  ],
+
+  [
     "optimizes true ? x : y",
     ternary(bool(true), int(1), int(2), core.intType),
     int(1),
@@ -172,6 +198,42 @@ const tests = [
     "optimizes null coalescing with empty optional",
     binary("??", optional(core.intType), int(72), core.intType),
     int(72),
+  ],
+
+  [
+    "leaves null coalescing when left is not an empty optional",
+    binary("??", mopt, int(72), core.intType),
+    binary("??", mopt, int(72), core.intType),
+  ],
+
+  [
+    "optimizes 0 - x",
+    binary("-", int(0), x, core.intType),
+    unary("-", x, core.intType),
+  ],
+
+  [
+    "optimizes x * float 1",
+    binary("*", xf, float(1), core.floatType),
+    xf,
+  ],
+
+  [
+    "optimizes member object subexpression",
+    new core.MemberExpression(binary("+", int(1), int(1), core.intType), "score"),
+    new core.MemberExpression(int(2), "score"),
+  ],
+
+  [
+    "passes through non-constant ternary",
+    ternary(id("b", core.boolType), int(1), int(2), core.intType),
+    ternary(id("b", core.boolType), int(1), int(2), core.intType),
+  ],
+
+  [
+    "optimizes if false without alternate",
+    new core.IfStatement(bool(false), block([new core.AssignmentStatement(x, int(1))]), null),
+    block([]),
   ],
 
   [
@@ -364,6 +426,52 @@ const tests = [
     "passes through empty return statement",
     new core.ReturnStatement(),
     new core.ReturnStatement(),
+  ],
+
+  [
+    "folds integer division to float when expression is float-typed",
+    binary("/", int(3), int(2), core.floatType),
+    float(1.5),
+  ],
+
+  [
+    "folds integer division with truncation for int-typed expression",
+    binary("/", int(5), int(2), core.intType),
+    int(2),
+  ],
+
+  ["folds integer bitwise or", binary("|", int(1), int(2), core.intType), int(3)],
+  ["folds integer bitwise xor", binary("^", int(5), int(3), core.intType), int(6)],
+  ["folds integer bitwise and", binary("&", int(6), int(3), core.intType), int(2)],
+  ["folds integer left shift", binary("<<", int(2), int(3), core.intType), int(16)],
+  ["folds integer right shift", binary(">>", int(-8), int(2), core.intType), int(-2)],
+
+  ["folds float remainder", binary("%", float(5.5), float(2), core.floatType), float(1.5)],
+  ["folds float exponentiation", binary("**", float(2), float(3), core.floatType), float(8)],
+
+  ["folds float less than", binary("<", float(1), float(2), core.boolType), bool(true)],
+  ["folds float less or equal", binary("<=", float(2), float(1), core.boolType), bool(false)],
+  ["folds float equal", binary("==", float(1), float(1), core.boolType), bool(true)],
+  ["folds float not equal", binary("!=", float(1), float(2), core.boolType), bool(true)],
+  ["folds float greater or equal", binary(">=", float(2), float(2), core.boolType), bool(true)],
+  ["folds float greater than", binary(">", float(2), float(1), core.boolType), bool(true)],
+
+  [
+    "returns null from numeric fold for unsupported op on float operands",
+    binary("|", float(1), float(2), core.floatType),
+    binary("|", float(1), float(2), core.floatType),
+  ],
+
+  [
+    "optimizes course declaration field list",
+    new core.CourseDeclaration("C", [new core.Field("x", core.intType)]),
+    new core.CourseDeclaration("C", [new core.Field("x", core.intType)]),
+  ],
+
+  [
+    "passes through parameter",
+    new core.Parameter("p", core.intType),
+    new core.Parameter("p", core.intType),
   ],
 ]
 

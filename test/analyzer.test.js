@@ -1,6 +1,7 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
-import analyze from "../src/analyzer.js"
+import analyze, { typeDescription } from "../src/analyzer.js"
+import * as core from "../src/core.js"
 import { parse } from "../src/parser.js"
 import { CompileUserError } from "../src/errors.js"
 
@@ -326,6 +327,25 @@ teeOff
 clubHouse
 `)
     })
+
+    it("analyzes course name in type annotation (Type_id)", () => {
+      assertAnalyzes(`
+teeOff
+  course Hole { score: int; }
+  bag h: Hole? = hazard Hole;
+clubHouse
+`)
+    })
+
+    it("accepts parenthesized primary expressions", () => {
+      assertAnalyzes(`
+teeOff
+  bag x = (1 + 2);
+  bag b = (fairway);
+clubHouse
+`)
+    })
+
   })
 
   describe("invalid programs", () => {
@@ -753,5 +773,22 @@ teeOff
 clubHouse
 `, /unicode/i)
     })
+  })
+})
+
+describe("typeDescription", () => {
+  it("returns unknown for nullish or unrecognized types", () => {
+    assert.equal(typeDescription(null), "unknown")
+    assert.equal(typeDescription(undefined), "unknown")
+    assert.equal(typeDescription({ kind: "Weird" }), "unknown")
+  })
+
+  it("formats array, optional, and function types", () => {
+    assert.equal(typeDescription(new core.ArrayType(core.intType)), "[int]")
+    assert.equal(typeDescription(new core.OptionalType(core.intType)), "int?")
+    assert.equal(
+      typeDescription(new core.FunctionType([core.intType, core.boolType], core.stringType)),
+      "(int, bool) -> string",
+    )
   })
 })

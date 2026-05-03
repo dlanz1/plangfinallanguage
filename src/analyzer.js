@@ -32,7 +32,7 @@ function assignable(fromType, toType) {
   )
 }
 
-function typeDescription(type) {
+export function typeDescription(type) {
   if (type?.kind === "Type") return type.name
   if (type?.kind === "ArrayType") return `[${typeDescription(type.baseType)}]`
   if (type?.kind === "OptionalType") return `${typeDescription(type.baseType)}?`

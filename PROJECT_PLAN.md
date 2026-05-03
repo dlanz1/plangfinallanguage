@@ -9,19 +9,20 @@ This plan is derived directly from the assignment PDF and mapped against the cur
 
 ---
 
-## 0. Status Snapshot (as of 2026-05-02)
+## 0. Status Snapshot (as of 2026-05-03)
 
 | Area | Status |
 |---|---|
-| Team formed (3–6 students) | Done — 4 members |
+| Team formed (3–6 students) | Done — 5 members listed in plan header |
 | Logo | Done (`3DTee-Logo.svg`) |
 | Ohm grammar | In progress — `src/3DTee.ohm` has substantive golf-keyword syntax |
-| Parser | **Working** — `src/parser.js` loads Ohm grammar; exposes `match` / `parse`; syntax errors include line/column (Ohm message) |
+| Parser | **Working** — `src/parser.js` loads Ohm grammar; exposes `match` / `parse`; throws `ParseError` with trimmed Ohm line/column message |
 | Analyzer / Optimizer / Generator | Stubs only (`throw` / not implemented); pipeline calls them after parse |
 | Core AST module | **Scaffolded** — `src/core.js` exports placeholder node classes; **no** real AST construction from parse yet |
-| Tests | Parser suite expanded (`test/parser.test.js`); analyzer/optimizer/generator tests are `it.todo` placeholders; `compiler.test.js` is minimal smoke |
+| Errors / CLI UX | `src/errors.js` (`ParseError`, `CompileUserError`); CLI validates args, maps `ENOENT`, uses explicit `process.exit` codes |
+| Tests | Parser suite **large** (`test/parser.test.js`); **≥50** runnable tests total (includes TODO placeholders); `test/compiler.test.js` covers `parsed`, unknown output type, and `analyzed` stub failure |
 | README | Good baseline content; companion-site link & static-constraints list still TODO |
-| Examples folder | **Present** — five syntax-valid `.3dt` files under `examples/` (parse-level only until analyzer exists) |
+| Examples folder | **Present** — **seven** syntax-valid `.3dt` files (see §6); parse-level only until analyzer exists |
 | Docs folder | **Missing** |
 | Companion website (GitHub Pages) | **Not started** |
 | Presentation / slides | **Not started** |
@@ -81,13 +82,14 @@ Each member must personally complete — group coverage does not count.
 
 ## 3. Compiler Implementation
 
-Target layout per spec:
+Target layout per spec (plus shared errors):
 ```
 src/
   3DTee.js       CLI entry
   3DTee.ohm      grammar
   compiler.js    pipeline orchestrator
   parser.js      grammar-driven parser
+  errors.js      ParseError / CompileUserError for CLI-friendly messages
   core.js        AST node classes / representation
   analyzer.js    static semantic analysis
   optimizer.js   optimizations
@@ -99,9 +101,9 @@ src/
 - [x] CLI entry `src/3DTee.js` exists
 - [x] CLI accepts `parsed`, `analyzed`, `optimized`, `js` (`parsed` succeeds on valid source; later modes fail until analyzer/optimizer/generator exist)
 - [x] Parse / syntax-check via `parsed` mode
-- [ ] Clean error reporting from CLI (line/column + message for all expected failures; no stack dumps) — partial today
+- [x] Clean error reporting from CLI for parse and user-facing compile errors (Ohm line/column in message; `ParseError` / `CompileUserError` print message only; unexpected errors still message-only)
 - [x] `compiler.js` wires parse → analyze → optimize → generate (stubs throw after parse for non-`parsed` modes)
-- [ ] Exit codes consistently sane (0 success, non-zero on error) — verify across all modes
+- [x] Exit codes for CLI: **0** success, **1** parse/runtime user errors & missing file, **2** bad argc / unknown output type (verify in CI when added)
 
 ### 3.2 Core AST (`core.js`) — scaffolded, not semantic yet
 
@@ -178,11 +180,12 @@ Using Node's built-in test runner + `c8`. The spec is blunt: 100% or lose points
 - [ ] `test/analyzer.test.js` — one test per static rule, both pass and fail (currently TODO placeholders only)
 - [ ] `test/optimizer.test.js` — one test per optimization (TODO placeholders only)
 - [ ] `test/generator.test.js` — golden-output tests for each syntactic form (TODO placeholders only)
-- [ ] `test/compiler.test.js` — end-to-end with at least one sample from `examples/` (smoke test only today)
-- [ ] **≥ 50 tests total** (5 pt gate, all-or-nothing)
+- [ ] `test/compiler.test.js` — full end-to-end through codegen with sample from `examples/` (today: `parsed`, unknown mode, and `analyzed` stub only)
+- [x] **≥ 50 tests total** (5 pt gate, all-or-nothing) — **met** as raw test count (`npm test` reports 50+)
 - [ ] Aim for "hundreds of tests" (checklist item)
-- [ ] `npm test` runs the suite **and** reports coverage out of the box
-- [ ] Coverage report shows **100%** lines/branches/functions
+- [x] `npm test` runs the suite **and** reports coverage out of the box (`c8`)
+- [x] `npm run test:parser` — parser-only suite with coverage
+- [ ] Coverage report shows **100%** lines/branches/functions (currently **not** 100% across all `src/` until analyzer/optimizer/generator are implemented & tested)
 - [ ] All tests pass on a clean clone (`git clone && npm install && npm test`)
 
 ---
@@ -204,6 +207,7 @@ Target tree (per spec):
 │   ├── 3DTee.ohm
 │   ├── compiler.js
 │   ├── parser.js
+│   ├── errors.js
 │   ├── core.js
 │   ├── analyzer.js
 │   ├── optimizer.js
@@ -221,14 +225,15 @@ Target tree (per spec):
 - [x] `.gitignore` expanded (`.DS_Store`, `node_modules/`, `coverage/`, `.env*`, editor dirs, logs, etc.)
 - [x] Top-level duplicate `index.js` and `grammar.ohm` **removed**; `src/3DTee.ohm` is authoritative
 - [ ] Create `docs/` (for website + logo + slides)
-- [x] Create `examples/` (see §6) — five starter programs present; expand + semantic correctness still TODO
+- [x] Create `examples/` (see §6) — seven starter programs present; expand + semantic correctness still TODO
+- [ ] GitHub Actions CI — **not** committed: push token lacked `workflow` scope; add `.github/workflows/ci.yml` via SSH or PAT with **workflow** scope, or enable in GitHub UI
 - [x] Public GitHub repo is **`3DTee`** under `dlanz1` (align any remaining `plangfinallanguage` references)
 - [ ] `package.json`:
   - [x] `name` is suitable slug (`3dtee`)
-  - [ ] `author` lists all 4 team members by name (currently generic placeholder)
+  - [ ] `author` lists all team members by name (currently generic placeholder; header lists five names)
   - [x] `"type": "module"`
   - [x] `repository` / `bugs` / `homepage` point at `3DTee` repo
-  - [x] `scripts.test` runs tests + coverage (`c8 node --test …`)
+  - [x] `scripts.test` runs tests + coverage (`c8 node --test …`); `scripts.test:parser` for parser-only runs
   - [x] `description`, `keywords` partially filled — tighten to assignment expectations
   - [ ] `license` field semantics vs `LICENSE` file (verify ISC vs file text if required)
 - [ ] Run Prettier across entire repo; add `.prettierrc.json` if useful
@@ -238,7 +243,7 @@ Target tree (per spec):
 
 ## 6. Example Programs (`examples/`)
 
-- [x] **≥ 5** example files present (`scorecard`, `handicap`, `tee_time`, `leaderboard`, `course_stats`)
+- [x] **≥ 5** example files present — **seven** files: `scorecard`, `handicap`, `tee_time`, `leaderboard`, `course_stats`, `caddie`, `front_nine`
 - [ ] **Semantically correct** once analyzer exists (today: parse-valid only)
 - [ ] Collectively cover **every syntactic form** in the grammar (expand set)
 - [ ] Cover most/all interesting semantic checks (types, optionals, structs, control flow)
@@ -252,7 +257,8 @@ Suggested programs:
 - [x] `tee_time.3dt` — optionals, `??`, conditionals
 - [x] `leaderboard.3dt` — sorting/iteration with ranges, `for in`
 - [x] `course_stats.3dt` — string handling, Unicode, print
-- [ ] `caddie.3dt` — first-class functions, function-typed params
+- [x] `caddie.3dt` — first-class functions, function-typed params
+- [x] `front_nine.3dt` — exponentiation, scientific floats, bitwise xor chain
 
 ---
 

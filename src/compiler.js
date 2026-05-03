@@ -2,10 +2,15 @@ import { parse } from "./parser.js"
 import analyze from "./analyzer.js"
 import optimize from "./optimizer.js"
 import generate from "./generator.js"
+import { CompileUserError } from "./errors.js"
+
+const OUTPUT_MODES = ["parsed", "analyzed", "optimized", "js"]
 
 export default function compile(source, outputType) {
-    if (!["parsed", "analyzed", "optimized", "js"].includes(outputType)) {
-        throw new Error("Unknown output type")
+    if (!OUTPUT_MODES.includes(outputType)) {
+        throw new CompileUserError(
+            `Unknown output type "${outputType}". Use one of: ${OUTPUT_MODES.join(", ")}`,
+        )
     }
     const match = parse(source)
     if (outputType === "parsed") return "Syntax is ok"

@@ -1,0 +1,6 @@
+// Demonstrates exponentiation, scientific floats, and bitwise xor chain.
+teeOff
+  bag powerScore = 2 ** 4;
+  bag science = 1.0e1 * 2.5e0;
+  bag mask = 1 ^ 2 ^ 3;
+clubHouse

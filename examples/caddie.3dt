@@ -1,0 +1,7 @@
+// Demonstrates function-typed parameters and applying a function value.
+teeOff
+  swing applyFn(f: (int)->int, x: int): int {
+    sink f(x);
+  }
+  bag helper = hazard (int)->int;
+clubHouse

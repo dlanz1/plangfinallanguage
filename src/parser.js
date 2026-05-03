@@ -1,5 +1,6 @@
 import fs from "node:fs"
 import * as ohm from "ohm-js"
+import { ParseError } from "./errors.js"
 
 const grammar = ohm.grammar(fs.readFileSync(new URL("./3DTee.ohm", import.meta.url), "utf-8"))
 
@@ -12,7 +13,7 @@ export function parse(sourceCode) {
     if (result.succeeded()) {
         return result
     }
-    throw new Error(result.message)
+    throw new ParseError(result.message.trim())
 }
 
 export default parse

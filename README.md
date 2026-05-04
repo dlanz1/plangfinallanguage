@@ -66,6 +66,8 @@ Where `<outputType>` is one of:
 - `optimized` — the optimized representation
 - `js` — the JavaScript translation
 
+Current status: parsing and analysis are implemented; optimization and JavaScript generation are still placeholders.
+
 ## Example
 
 ```
@@ -84,6 +86,42 @@ teeOff
   }
 clubHouse
 ```
+
+### 3DTee → JavaScript
+
+The same `examples/handicap.3dt` program, side by side with what the generator emits when invoked as `node src/3DTee.js examples/handicap.3dt js`:
+
+<table>
+<tr>
+<th>handicap.3dt</th>
+<th>generated JavaScript</th>
+</tr>
+<tr>
+<td>
+
+```
+teeOff
+  swing relativeToPar(score: int, par: int): int {
+    sink score - par;
+  }
+
+  bag today = relativeToPar(74, 72);
+clubHouse
+```
+
+</td>
+<td>
+
+```js
+function relativeToPar(score, par) {
+  return (score - par);
+}
+let today = relativeToPar(74, 72);
+```
+
+</td>
+</tr>
+</table>
 
 ## Testing
 

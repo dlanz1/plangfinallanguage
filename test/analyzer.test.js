@@ -1,7 +1,9 @@
 import { describe, it } from "node:test"
 import assert from "node:assert/strict"
-import analyze from "../src/analyzer.js"
+import analyze, { typeDescription } from "../src/analyzer.js"
+import * as core from "../src/core.js"
 import { parse } from "../src/parser.js"
+import { CompileUserError } from "../src/errors.js"
 
 function analyzed(source) {
   return analyze(parse(source))
@@ -11,8 +13,11 @@ function assertAnalyzes(source) {
   assert.doesNotThrow(() => analyzed(source))
 }
 
-function assertRejects(source, pattern = /./) {
-  assert.throws(() => analyzed(source), pattern)
+function assertRejects(source, pattern = /Line|Expected|Cannot|Identifier|argument|field|return|shank|sink/i) {
+  assert.throws(
+    () => analyzed(source),
+    error => error instanceof CompileUserError && pattern.test(error.message),
+  )
 }
 
 describe("The analyzer", () => {
@@ -24,12 +29,13 @@ clubHouse
 `)
     })
 
-    it("analyzes variable declarations with inferred types", () => {
+    it("analyzes inferred variable declarations", () => {
       assertAnalyzes(`
 teeOff
   bag score = 72;
   bag name = "Devan";
   bag madePutt = fairway;
+  bag average = 72.5;
 clubHouse
 `)
     })
@@ -45,7 +51,15 @@ clubHouse
 `)
     })
 
-    it("analyzes constant declarations", () => {
+    it("allows assigning int to float", () => {
+      assertAnalyzes(`
+teeOff
+  bag average: float = 72;
+clubHouse
+`)
+    })
+
+    it("analyzes constants", () => {
       assertAnalyzes(`
 teeOff
   pin par: int = 72;
@@ -54,7 +68,7 @@ clubHouse
 `)
     })
 
-    it("analyzes assignments to variables", () => {
+    it("analyzes assignments", () => {
       assertAnalyzes(`
 teeOff
   bag score = 72;
@@ -72,7 +86,7 @@ clubHouse
 `)
     })
 
-    it("analyzes relational and equality expressions", () => {
+    it("analyzes numeric comparisons", () => {
       assertAnalyzes(`
 teeOff
   bag a = 72 <= 73;
@@ -82,10 +96,43 @@ clubHouse
 `)
     })
 
+    it("analyzes string comparisons", () => {
+      assertAnalyzes(`
+teeOff
+  bag result = "a" < "b";
+clubHouse
+`)
+    })
+
     it("analyzes logical expressions", () => {
       assertAnalyzes(`
 teeOff
   bag x = fairway && rough || fairway;
+clubHouse
+`)
+    })
+
+    it("analyzes bitwise expressions", () => {
+      assertAnalyzes(`
+teeOff
+  bag x = 1 | 2 ^ 3 & 4;
+clubHouse
+`)
+    })
+
+    it("analyzes shift expressions", () => {
+      assertAnalyzes(`
+teeOff
+  bag x = 8 << 2 >> 1;
+clubHouse
+`)
+    })
+
+    it("analyzes unary expressions", () => {
+      assertAnalyzes(`
+teeOff
+  bag a = -72;
+  bag b = !rough;
 clubHouse
 `)
     })
@@ -115,6 +162,15 @@ clubHouse
 `)
     })
 
+    it("analyzes length operator", () => {
+      assertAnalyzes(`
+teeOff
+  bag scores = [70, 72, 74];
+  bag count = #scores;
+clubHouse
+`)
+    })
+
     it("analyzes function declarations and calls", () => {
       assertAnalyzes(`
 teeOff
@@ -127,7 +183,7 @@ clubHouse
 `)
     })
 
-    it("analyzes function calls as statements", () => {
+    it("analyzes function call statements", () => {
       assertAnalyzes(`
 teeOff
   swing sayHi() {
@@ -139,11 +195,21 @@ clubHouse
 `)
     })
 
-    it("analyzes return without value in a void function", () => {
+    it("analyzes empty return in void function", () => {
       assertAnalyzes(`
 teeOff
   swing done() {
     sink;
+  }
+clubHouse
+`)
+    })
+
+    it("analyzes function type parameters", () => {
+      assertAnalyzes(`
+teeOff
+  swing apply(f: (int) -> int, x: int): int {
+    sink f(x);
   }
 clubHouse
 `)
@@ -207,7 +273,7 @@ clubHouse
 `)
     })
 
-    it("analyzes play through collection loops", () => {
+    it("analyzes play through array loops", () => {
       assertAnalyzes(`
 teeOff
   bag scores: [int] = [70, 72, 74];
@@ -228,7 +294,7 @@ clubHouse
 `)
     })
 
-    it("analyzes loft and bounce on optionals", () => {
+    it("analyzes loft and bounce", () => {
       assertAnalyzes(`
 teeOff
   bag maybeScore: int? = hazard int;
@@ -248,156 +314,185 @@ teeOff
 clubHouse
 `)
     })
+
+    it("analyzes course type annotations", () => {
+      assertAnalyzes(`
+teeOff
+  course Player {
+    score: int;
+  }
+
+  bag player = Player;
+  bag score = player.score;
+clubHouse
+`)
+    })
+
+    it("analyzes course name in type annotation (Type_id)", () => {
+      assertAnalyzes(`
+teeOff
+  course Hole { score: int; }
+  bag h: Hole? = hazard Hole;
+clubHouse
+`)
+    })
+
+    it("accepts parenthesized primary expressions", () => {
+      assertAnalyzes(`
+teeOff
+  bag x = (1 + 2);
+  bag b = (fairway);
+clubHouse
+`)
+    })
+
   })
 
   describe("invalid programs", () => {
     it("rejects use before declaration", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   bag x = y;
 clubHouse
-`,
-        /declared|defined|identifier|variable/i,
-      )
+`, /not declared/i)
     })
 
-    it("rejects duplicate declarations in the same scope", () => {
-      assertRejects(
-        `
+    it("rejects duplicate declarations", () => {
+      assertRejects(`
 teeOff
   bag score = 72;
   bag score = 73;
 clubHouse
-`,
-        /duplicate|already/i,
-      )
+`, /already declared/i)
     })
 
-    it("rejects assigning wrong type to typed variable", () => {
-      assertRejects(
-        `
+    it("rejects wrong typed variable initializer", () => {
+      assertRejects(`
 teeOff
   bag score: int = "seventy two";
 clubHouse
-`,
-        /type|int|string/i,
-      )
+`, /Cannot assign/i)
     })
 
-    it("rejects assigning wrong type to typed constant", () => {
-      assertRejects(
-        `
+    it("rejects wrong typed constant initializer", () => {
+      assertRejects(`
 teeOff
   pin par: int = rough;
 clubHouse
-`,
-        /type|int|bool/i,
-      )
+`, /Cannot assign/i)
+    })
+
+    it("rejects array type mismatch", () => {
+      assertRejects(`
+teeOff
+  bag scores: [int] = 1;
+clubHouse
+`, /Cannot assign/i)
+    })
+
+    it("rejects optional type mismatch", () => {
+      assertRejects(`
+teeOff
+  bag maybeScore: int? = 72;
+clubHouse
+`, /Cannot assign/i)
+    })
+
+    it("rejects function type mismatch", () => {
+      assertRejects(`
+teeOff
+  bag f: (int) -> int = 1;
+clubHouse
+`, /Cannot assign/i)
     })
 
     it("rejects reassignment to constants", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   pin par = 72;
   par = 71;
 clubHouse
-`,
-        /constant|pin|assign/i,
-      )
+`, /immutable/i)
     })
 
     it("rejects non-bool readLie condition", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   readLie 72 {
     print("bad");
   }
 clubHouse
-`,
-        /bool|condition/i,
-      )
+`, /boolean/i)
     })
 
     it("rejects non-bool whileBall condition", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   whileBall 72 {
     print("bad");
   }
 clubHouse
-`,
-        /bool|condition/i,
-      )
+`, /boolean/i)
     })
 
     it("rejects non-bool practice condition", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   practice {
     print("again");
   } whileBall 72;
 clubHouse
-`,
-        /bool|condition/i,
-      )
+`, /boolean/i)
     })
 
     it("rejects shank outside loops", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   shank;
 clubHouse
-`,
-        /loop|shank|break/i,
-      )
+`, /loop/i)
     })
 
     it("rejects sink outside functions", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   sink 1;
 clubHouse
-`,
-        /function|sink|return/i,
-      )
+`, /function/i)
     })
 
-    it("rejects return value with wrong function return type", () => {
-      assertRejects(
-        `
+    it("rejects return value from void function", () => {
+      assertRejects(`
 teeOff
-  swing f(): int {
-    sink "bad";
+  swing f() {
+    sink 1;
   }
 clubHouse
-`,
-        /return|type|int|string/i,
-      )
+`, /return a value/i)
     })
 
-    it("rejects missing return value in non-void function", () => {
-      assertRejects(
-        `
+    it("rejects empty return from non-void function", () => {
+      assertRejects(`
 teeOff
   swing f(): int {
     sink;
   }
 clubHouse
-`,
-        /return|type|int|void/i,
-      )
+`, /return no value/i)
     })
 
-    it("rejects function call with too few arguments", () => {
-      assertRejects(
-        `
+    it("rejects wrong return type", () => {
+      assertRejects(`
+teeOff
+  swing f(): int {
+    sink "bad";
+  }
+clubHouse
+`, /Cannot assign/i)
+    })
+
+    it("rejects too few function arguments", () => {
+      assertRejects(`
 teeOff
   swing add(x: int, y: int): int {
     sink x + y;
@@ -405,14 +500,11 @@ teeOff
 
   bag z = add(1);
 clubHouse
-`,
-        /argument|arity|parameter/i,
-      )
+`, /argument/i)
     })
 
-    it("rejects function call with too many arguments", () => {
-      assertRejects(
-        `
+    it("rejects too many function arguments", () => {
+      assertRejects(`
 teeOff
   swing add(x: int): int {
     sink x;
@@ -420,14 +512,11 @@ teeOff
 
   bag z = add(1, 2);
 clubHouse
-`,
-        /argument|arity|parameter/i,
-      )
+`, /argument/i)
     })
 
-    it("rejects function call with wrong argument type", () => {
-      assertRejects(
-        `
+    it("rejects wrong function argument type", () => {
+      assertRejects(`
 teeOff
   swing addOne(x: int): int {
     sink x + 1;
@@ -435,105 +524,349 @@ teeOff
 
   bag z = addOne("bad");
 clubHouse
-`,
-        /argument|type|int|string/i,
-      )
+`, /Cannot assign/i)
     })
 
     it("rejects calling a non-function", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   bag x = 1;
   x();
 clubHouse
-`,
-        /function|call/i,
-      )
+`, /non-function/i)
     })
 
-    it("rejects mixed array literal element types", () => {
-      assertRejects(
-        `
+    it("rejects duplicate parameters", () => {
+      assertRejects(`
+teeOff
+  swing bad(x: int, x: int): int {
+    sink x;
+  }
+clubHouse
+`, /already declared/i)
+    })
+
+    it("rejects mixed array elements", () => {
+      assertRejects(`
 teeOff
   bag xs = [1, "two", 3];
 clubHouse
-`,
-        /array|type/i,
-      )
+`, /same type|elements/i)
     })
 
-    it("rejects array indexing with non-int index", () => {
-      assertRejects(
-        `
+    it("rejects indexing non-array", () => {
+      assertRejects(`
 teeOff
-  bag xs = [1, 2, 3];
-  bag x = xs["zero"];
-clubHouse
-`,
-        /index|int/i,
-      )
-    })
-
-    it("rejects indexing a non-array", () => {
-      assertRejects(
-        `
-teeOff
-  bag x = 1;
+  bag x = 72;
   bag y = x[0];
 clubHouse
-`,
-        /array|index/i,
-      )
+`, /array/i)
     })
 
-    it("rejects null coalescing with non-optional left operand", () => {
-      assertRejects(
-        `
+    it("rejects non-integer array index", () => {
+      assertRejects(`
+teeOff
+  bag xs = [1, 2, 3];
+  bag y = xs["zero"];
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects null coalescing on non-optional", () => {
+      assertRejects(`
 teeOff
   bag x = 1 ?? 2;
 clubHouse
-`,
-        /optional|\?\?/i,
-      )
+`, /optional/i)
     })
 
-    it("rejects null coalescing fallback with wrong type", () => {
-      assertRejects(
-        `
+    it("rejects null coalescing fallback mismatch", () => {
+      assertRejects(`
 teeOff
   bag maybeScore: int? = hazard int;
   bag score = maybeScore ?? "bad";
 clubHouse
-`,
-        /optional|type|int|string/i,
-      )
+`, /Cannot assign/i)
     })
 
-    it("rejects bounce on non-optional value", () => {
-      assertRejects(
-        `
+    it("rejects unary minus on strings", () => {
+      assertRejects(`
 teeOff
-  bag score = 72;
-  bag x = bounce score;
+  bag x = -"bad";
 clubHouse
-`,
-        /optional|bounce/i,
-      )
+`, /number/i)
+    })
+
+    it("rejects not on integers", () => {
+      assertRejects(`
+teeOff
+  bag x = !72;
+clubHouse
+`, /boolean/i)
+    })
+
+    it("rejects length on non-array", () => {
+      assertRejects(`
+teeOff
+  bag x = #72;
+clubHouse
+`, /array/i)
+    })
+
+    it("rejects loft on non-optional", () => {
+      assertRejects(`
+teeOff
+  bag x = loft 72;
+clubHouse
+`, /optional/i)
+    })
+
+    it("rejects bounce on non-optional", () => {
+      assertRejects(`
+teeOff
+  bag x = bounce 72;
+clubHouse
+`, /optional/i)
+    })
+
+    it("rejects logical or on integers", () => {
+      assertRejects(`
+teeOff
+  bag x = 1 || 2;
+clubHouse
+`, /boolean/i)
+    })
+
+    it("rejects logical and on integers", () => {
+      assertRejects(`
+teeOff
+  bag x = 1 && 2;
+clubHouse
+`, /boolean/i)
+    })
+
+    it("rejects bitwise or on floats", () => {
+      assertRejects(`
+teeOff
+  bag x = 1.5 | 2.5;
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects bitwise xor on floats", () => {
+      assertRejects(`
+teeOff
+  bag x = 1.5 ^ 2.5;
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects bitwise and on floats", () => {
+      assertRejects(`
+teeOff
+  bag x = 1.5 & 2.5;
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects shift with float left operand", () => {
+      assertRejects(`
+teeOff
+  bag x = 1.5 << 2;
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects shift with float right operand", () => {
+      assertRejects(`
+teeOff
+  bag x = 8 >> 2.5;
+clubHouse
+`, /integer/i)
+    })
+
+    it("rejects subtraction on strings", () => {
+      assertRejects(`
+teeOff
+  bag x = "a" - "b";
+clubHouse
+`, /number/i)
+    })
+
+    it("rejects multiplication on booleans", () => {
+      assertRejects(`
+teeOff
+  bag x = fairway * rough;
+clubHouse
+`, /number/i)
+    })
+
+    it("rejects exponentiation on strings", () => {
+      assertRejects(`
+teeOff
+  bag x = "a" ** "b";
+clubHouse
+`, /number/i)
+    })
+
+    it("rejects ternary with non-boolean condition", () => {
+      assertRejects(`
+teeOff
+  bag x = 1 ? 2 : 3;
+clubHouse
+`, /boolean/i)
+    })
+
+    it("rejects ternary branch mismatch", () => {
+      assertRejects(`
+teeOff
+  bag x = fairway ? 1 : "bad";
+clubHouse
+`, /same type/i)
+    })
+
+    it("rejects comparing different types", () => {
+      assertRejects(`
+teeOff
+  bag x = 1 < "bad";
+clubHouse
+`, /same type/i)
     })
 
     it("rejects duplicate course fields", () => {
-      assertRejects(
-        `
+      assertRejects(`
 teeOff
   course Player {
     score: int;
     score: int;
   }
 clubHouse
-`,
-        /field|duplicate|already/i,
-      )
+`, /Fields must be distinct/i)
     })
+
+    it("rejects member access on non-course value", () => {
+      assertRejects(`
+teeOff
+  bag x = 72;
+  bag y = x.score;
+clubHouse
+`, /course/i)
+    })
+
+    it("rejects missing course field", () => {
+      assertRejects(`
+teeOff
+  course Player {
+    score: int;
+  }
+
+  bag player = Player;
+  bag name = player.name;
+clubHouse
+`, /No such field/i)
+    })
+
+    it("rejects invalid unicode escape", () => {
+      assertRejects(`
+teeOff
+  bag s = "\\u{1111111}";
+clubHouse
+`, /unicode/i)
+    })
+  })
+})
+
+describe("more branch coverage", () => {
+  it("infers an empty array literal as having an any element type", () => {
+    assertAnalyzes(`
+teeOff
+  bag empty = [];
+clubHouse
+`)
+  })
+
+  it("treats subscript and member targets as mutable", () => {
+    assertAnalyzes(`
+teeOff
+  bag scores: [int] = [1, 2, 3];
+  scores[0] = 9;
+
+  course Player { score: int; }
+  bag p = Player;
+  p.score = 5;
+clubHouse
+`)
+  })
+
+  it("rejects assigning to a constant via subscript or member", () => {
+    assertRejects(`
+teeOff
+  pin scores: [int] = [1, 2, 3];
+  scores[0] = 9;
+clubHouse
+`, /immutable/i)
+  })
+
+  it("treats two function declarations with matching signatures as assignment-compatible", () => {
+    assertAnalyzes(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  swing alias(a: int, b: int): int { sink add(a, b); }
+clubHouse
+`)
+  })
+
+  it("allows binding a swing to a typed function variable", () => {
+    assertAnalyzes(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int, int) -> int = add;
+  bag total = op(3, 4);
+clubHouse
+`)
+  })
+
+  it("rejects binding a swing to a typed function variable with mismatched return type", () => {
+    assertRejects(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int, int) -> bool = add;
+clubHouse
+`, /Cannot assign/i)
+  })
+
+  it("rejects binding a swing to a typed function variable with mismatched arity", () => {
+    assertRejects(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int) -> int = add;
+clubHouse
+`, /Cannot assign/i)
+  })
+
+  it("rejects binding a swing to a typed function variable with a mismatched parameter type", () => {
+    assertRejects(`
+teeOff
+  swing greet(name: string): int { sink 1; }
+  bag op: (int) -> int = greet;
+clubHouse
+`, /Cannot assign/i)
+  })
+})
+
+describe("typeDescription", () => {
+  it("returns unknown for nullish or unrecognized types", () => {
+    assert.equal(typeDescription(null), "unknown")
+    assert.equal(typeDescription(undefined), "unknown")
+    assert.equal(typeDescription({ kind: "Weird" }), "unknown")
+  })
+
+  it("formats array, optional, and function types", () => {
+    assert.equal(typeDescription(new core.ArrayType(core.intType)), "[int]")
+    assert.equal(typeDescription(new core.OptionalType(core.intType)), "int?")
+    assert.equal(
+      typeDescription(new core.FunctionType([core.intType, core.boolType], core.stringType)),
+      "(int, bool) -> string",
+    )
   })
 })

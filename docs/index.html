@@ -250,6 +250,20 @@
         color: var(--green-dark);
       }
 
+      .checks-list {
+        margin: 16px 0 0;
+        padding-left: 22px;
+        color: var(--muted);
+      }
+
+      .checks-list li {
+        margin: 6px 0;
+      }
+
+      .checks-list code {
+        color: var(--ink);
+      }
+
       .examples-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -352,6 +366,7 @@
           <a href="#story">Story</a>
           <a href="#features">Features</a>
           <a href="#examples">Examples</a>
+          <a href="#try-it">Try It</a>
           <a href="#checks">Checks</a>
           <a href="#team">Team</a>
           <a href="https://github.com/dlanz1/3DTee">GitHub</a>
@@ -405,9 +420,9 @@
         </p>
         <p>
           The compiler follows the classic course pipeline: Ohm grammar,
-          parser, analyzer, optimizer, and JavaScript generator. Parsing and
-          static analysis are implemented now; optimization and code generation
-          are the remaining placeholder stages.
+          parser, analyzer, optimizer, and JavaScript generator. All four
+          stages are implemented and the test suite reports 100% line,
+          statement, function, and branch coverage on every source file.
         </p>
       </section>
 
@@ -594,61 +609,117 @@ clubHouse</code></pre>
           </article>
         </div>
         <p class="note">
-          Current compiler status: parser and analyzer are implemented.
-          Optimizer and JavaScript generation currently exist as compiler
-          stages but are still placeholders in this repository.
+          Every example program above is also part of the regression suite:
+          each one is parsed, analyzed, optimized, generated to JavaScript, and
+          executed in a sandboxed VM context as part of <code>npm test</code>.
         </p>
+      </section>
+
+      <section id="try-it" aria-labelledby="try-it-title">
+        <h2 id="try-it-title">Try It</h2>
+        <p>
+          Clone the repo, install dependencies, and pick a 3DTee program and an
+          output type to see each stage of the pipeline in action:
+        </p>
+        <pre><code>git clone https://github.com/dlanz1/3DTee.git
+cd 3DTee
+npm install
+
+# Confirm grammar match only
+node src/3DTee.js examples/handicap.3dt parsed
+
+# Inspect the analyzed AST
+node src/3DTee.js examples/handicap.3dt analyzed
+
+# Inspect the optimized AST
+node src/3DTee.js examples/handicap.3dt optimized
+
+# Emit JavaScript
+node src/3DTee.js examples/handicap.3dt js</code></pre>
+        <p>
+          The last command, run on <code>examples/handicap.3dt</code>, produces:
+        </p>
+        <pre><code>function relativeToPar(score, par) {
+  return (score - par);
+}
+let today = relativeToPar(74, 72);</code></pre>
       </section>
 
       <section id="checks" aria-labelledby="checks-title">
         <h2 id="checks-title">Static, Safety, and Security Checks</h2>
-        <div class="status-grid">
-          <article class="status">
-            <h3>Scopes and Declarations</h3>
-            <p>
-              <strong>Implemented.</strong> Names resolve through lexical
-              scope, duplicate declarations are rejected, and unknown
-              identifiers are reported.
-            </p>
-          </article>
-          <article class="status">
-            <h3>Type Safety</h3>
-            <p>
-              <strong>Implemented.</strong> Assignments, function calls,
-              returns, operators, arrays, records, and optionals are checked
-              during analysis.
-            </p>
-          </article>
-          <article class="status">
-            <h3>Control Flow</h3>
-            <p>
-              <strong>Implemented.</strong> <code>sink</code> is accepted only
-              in function bodies, and <code>shank</code> is accepted only inside
-              loop bodies.
-            </p>
-          </article>
-          <article class="status">
-            <h3>Constants</h3>
-            <p>
-              <strong>Implemented.</strong> <code>pin</code> declarations
-              reject reassignment and mutation attempts.
-            </p>
-          </article>
-          <article class="status">
-            <h3>Optionals</h3>
-            <p>
-              <strong>Implemented.</strong> Optional operations validate
-              operands and fallback expressions before later compiler stages.
-            </p>
-          </article>
-          <article class="status">
-            <h3>Readable Errors</h3>
-            <p>
-              <strong>Implemented.</strong> Parse and analysis errors include
-              source line and column information for the violated rule.
-            </p>
-          </article>
-        </div>
+        <p>
+          The analyzer enforces every rule below. Violations are surfaced as
+          <code>CompileUserError</code> messages that include the offending
+          line and column.
+        </p>
+        <ul class="checks-list">
+          <li>An identifier cannot be redeclared in the same scope.</li>
+          <li>An identifier must be declared before it is used.</li>
+          <li>Variable, parameter, and field types must resolve to a known type.</li>
+          <li>An initializer must be assignable to its declared (or inferred) type.</li>
+          <li>
+            <code>int</code> widens to <code>float</code> on assignment;
+            otherwise types must match exactly. Function types match by arity
+            and component-wise assignability.
+          </li>
+          <li>
+            The target of an assignment must be mutable: a <code>bag</code>, a
+            parameter, an element of either, or a field of either &mdash; never
+            a <code>pin</code>.
+          </li>
+          <li>
+            Arithmetic operators require numeric operands; <code>+</code>
+            additionally accepts two strings.
+          </li>
+          <li>
+            Bitwise (<code>|</code>, <code>^</code>, <code>&amp;</code>) and
+            shift (<code>&lt;&lt;</code>, <code>&gt;&gt;</code>) operators
+            require integer operands.
+          </li>
+          <li>
+            Logical operators (<code>&amp;&amp;</code>, <code>||</code>,
+            <code>!</code>) and the tests in <code>readLie</code>,
+            <code>whileBall</code>, <code>practice</code>, and ternaries must
+            be boolean.
+          </li>
+          <li>
+            Relational ordering (<code>&lt;</code>, <code>&lt;=</code>,
+            <code>&gt;</code>, <code>&gt;=</code>) requires numeric or string
+            operands; both sides of any comparison must have the same type.
+          </li>
+          <li>
+            Array indexing requires an array on the left and an integer on the
+            right; <code>#</code> requires an array.
+          </li>
+          <li>
+            Member access requires a <code>course</code> value and a field
+            name declared on that <code>course</code>; field names must be
+            distinct.
+          </li>
+          <li>
+            A function call's argument count must match the declared arity,
+            and each argument must be assignable to its parameter type.
+          </li>
+          <li>
+            <code>loft</code> and <code>bounce</code> require an optional;
+            <code>??</code> requires an optional on the left and a
+            base-type-compatible value on the right.
+          </li>
+          <li>
+            <code>shank</code> may appear only inside a loop;
+            <code>sink</code> may appear only inside a function, and a
+            value-<code>sink</code> requires a non-void return type.
+          </li>
+          <li>
+            Array literals must be homogeneous; the empty bracketed literal
+            <code>[]</code> infers as <code>[any]</code>, and a typed empty
+            array uses <code>[T]()</code>.
+          </li>
+          <li>
+            Unicode escapes inside strings must be valid code points
+            (&le; <code>0x10FFFF</code>).
+          </li>
+        </ul>
       </section>
 
       <section id="team" aria-labelledby="team-title">

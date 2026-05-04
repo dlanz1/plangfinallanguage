@@ -473,6 +473,28 @@ const tests = [
     new core.Parameter("p", core.intType),
     new core.Parameter("p", core.intType),
   ],
+
+  [
+    "simplifies 0 / x to 0",
+    binary("/", int(0), id("x"), core.intType),
+    int(0),
+  ],
+
+  [
+    "simplifies 1 ** x to 1",
+    binary("**", int(1), id("x"), core.intType),
+    int(1),
+  ],
+
+  [
+    "removes a play through a literal empty array",
+    program([
+      new core.ForStatement("score", array([], core.intType), block([
+        new core.AssignmentStatement(id("x"), int(1)),
+      ])),
+    ]),
+    program([]),
+  ],
 ]
 
 describe("The optimizer", () => {
@@ -481,4 +503,17 @@ describe("The optimizer", () => {
       assert.deepEqual(optimize(before), after)
     })
   }
+
+  it("returns null when given a null node", () => {
+    assert.equal(optimize(null), null)
+  })
+
+  it("returns undefined when given an undefined node", () => {
+    assert.equal(optimize(undefined), undefined)
+  })
+
+  it("returns the node unchanged when its kind has no registered optimizer", () => {
+    const node = { kind: "UnknownKind", value: 42 }
+    assert.equal(optimize(node), node)
+  })
 })

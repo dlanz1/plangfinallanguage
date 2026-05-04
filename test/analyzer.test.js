@@ -776,6 +776,84 @@ clubHouse
   })
 })
 
+describe("more branch coverage", () => {
+  it("infers an empty array literal as having an any element type", () => {
+    assertAnalyzes(`
+teeOff
+  bag empty = [];
+clubHouse
+`)
+  })
+
+  it("treats subscript and member targets as mutable", () => {
+    assertAnalyzes(`
+teeOff
+  bag scores: [int] = [1, 2, 3];
+  scores[0] = 9;
+
+  course Player { score: int; }
+  bag p = Player;
+  p.score = 5;
+clubHouse
+`)
+  })
+
+  it("rejects assigning to a constant via subscript or member", () => {
+    assertRejects(`
+teeOff
+  pin scores: [int] = [1, 2, 3];
+  scores[0] = 9;
+clubHouse
+`, /immutable/i)
+  })
+
+  it("treats two function declarations with matching signatures as assignment-compatible", () => {
+    assertAnalyzes(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  swing alias(a: int, b: int): int { sink add(a, b); }
+clubHouse
+`)
+  })
+
+  it("allows binding a swing to a typed function variable", () => {
+    assertAnalyzes(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int, int) -> int = add;
+  bag total = op(3, 4);
+clubHouse
+`)
+  })
+
+  it("rejects binding a swing to a typed function variable with mismatched return type", () => {
+    assertRejects(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int, int) -> bool = add;
+clubHouse
+`, /Cannot assign/i)
+  })
+
+  it("rejects binding a swing to a typed function variable with mismatched arity", () => {
+    assertRejects(`
+teeOff
+  swing add(a: int, b: int): int { sink a + b; }
+  bag op: (int) -> int = add;
+clubHouse
+`, /Cannot assign/i)
+  })
+
+  it("rejects binding a swing to a typed function variable with a mismatched parameter type", () => {
+    assertRejects(`
+teeOff
+  swing greet(name: string): int { sink 1; }
+  bag op: (int) -> int = greet;
+clubHouse
+`, /Cannot assign/i)
+  })
+})
+
 describe("typeDescription", () => {
   it("returns unknown for nullish or unrecognized types", () => {
     assert.equal(typeDescription(null), "unknown")

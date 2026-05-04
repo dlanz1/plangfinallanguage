@@ -343,4 +343,17 @@ describe("The code generator", () => {
     const prog = new core.Program([new core.VariableDeclaration("y", core.intType, u)])
     assert.equal(generate(prog), "let y = ~(x);")
   })
+
+  it("emits 'false' for a boolean false literal that survives optimization", () => {
+    const lit = new core.BooleanLiteral(false)
+    lit.type = core.boolType
+    const prog = new core.Program([new core.VariableDeclaration("b", core.boolType, lit)])
+    assert.equal(generate(prog), "let b = false;")
+  })
+
+  it("returns the empty string when the generator is asked to emit a null node", () => {
+    const decl = new core.VariableDeclaration("v", core.intType, null)
+    const prog = new core.Program([decl])
+    assert.equal(generate(prog), "let v = ;")
+  })
 })

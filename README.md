@@ -64,7 +64,30 @@ Where `<outputType>` is one of:
 - `optimized` — the optimized representation
 - `js` — the JavaScript translation
 
-Current status: parsing and analysis are implemented; optimization and JavaScript generation are still placeholders.
+Current status: the full pipeline — parser, analyzer, optimizer, and JavaScript generator — is implemented. `npm test` runs the full suite with 100% line, statement, function, and branch coverage on every source file.
+
+## Static Checks
+
+The analyzer enforces the following rules; violations are reported as `CompileUserError` with the offending line and column:
+
+- An identifier cannot be redeclared in the same scope.
+- An identifier must be declared before it is used.
+- Variable, parameter, and field types must resolve to a known type.
+- A variable's initializer must be assignable to its declared (or inferred) type.
+- `int` widens to `float` on assignment; otherwise types must match exactly. Function types match by arity and component-wise assignability.
+- The target of an assignment must be mutable (a `bag`, a parameter, an element of one of those, or a field of one of those — never a `pin`).
+- Arithmetic operators require numeric operands; `+` additionally accepts two strings.
+- Bitwise (`|`, `^`, `&`) and shift (`<<`, `>>`) operators require integer operands.
+- Logical operators (`&&`, `||`, `!`) and conditional tests (`readLie`, `whileBall`, `practice`, ternary) require booleans.
+- Relational ordering (`<`, `<=`, `>`, `>=`) requires numeric or string operands; both sides of any comparison must have the same type.
+- Array indexing requires an array on the left and an integer on the right; `#` requires an array.
+- Member access requires a `course` value and a field name declared on that `course`.
+- A `course` declaration's fields must have distinct names.
+- A function call's argument count must match the declared arity, and each argument must be assignable to its parameter type.
+- `loft` and `bounce` require an optional value; `??` requires an optional on the left and a base-type-compatible value on the right.
+- `shank` may appear only inside a loop; `sink` may appear only inside a function, and a value-`sink` is allowed only when the function declares a non-void return type.
+- Array literals must be homogeneous; the empty bracketed literal `[]` infers as `[any]`, and a typed empty array uses `[T]()`.
+- Unicode escapes inside strings must be valid code points (≤ `0x10FFFF`).
 
 ## Example
 
@@ -84,6 +107,42 @@ teeOff
   }
 clubHouse
 ```
+
+### 3DTee → JavaScript
+
+The same `examples/handicap.3dt` program, side by side with what the generator emits when invoked as `node src/3DTee.js examples/handicap.3dt js`:
+
+<table>
+<tr>
+<th>handicap.3dt</th>
+<th>generated JavaScript</th>
+</tr>
+<tr>
+<td>
+
+```
+teeOff
+  swing relativeToPar(score: int, par: int): int {
+    sink score - par;
+  }
+
+  bag today = relativeToPar(74, 72);
+clubHouse
+```
+
+</td>
+<td>
+
+```js
+function relativeToPar(score, par) {
+  return (score - par);
+}
+let today = relativeToPar(74, 72);
+```
+
+</td>
+</tr>
+</table>
 
 ## Testing
 

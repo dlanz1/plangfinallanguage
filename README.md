@@ -4,11 +4,13 @@
 
 # 3DTee — A Golf-Themed Programming Language
 
-3DTee is a statically-typed language where the source code plays like a round of golf. Every program starts at `teeOff` and finishes at `clubHouse`; variables live in `bag`s, constants are `pin`ned, functions are `swing`s, and the compiler keeps score with static types, scope checking, and safety rules. 3DTee is designed to compile to clean, readable JavaScript.
+3DTee is a statistically-typed language where the source code plays like a round of golf. Every program starts at `teeOff` and finishes at `clubHouse`; variables live in `bag`s, constants are `pin`ned, functions are `swing`s, and the compiler keeps score with static types, scope checking, and safety rules. 3DTee compiles to clean, readable JavaScript.
 
 ## Companion Website
 
 Visit the 3DTee companion site at [https://dlanz1.github.io/3DTee/](https://dlanz1.github.io/3DTee/). The site source lives in [`docs/index.html`](./docs/index.html).
+ 
+Slides: https://docs.google.com/presentation/d/17XubmCSJtp4ytGMFM20EQrhOWje5j9KvOEFjCGLMdgg/edit?usp=sharing 
 
 ## Features
 
@@ -16,7 +18,7 @@ Visit the 3DTee companion site at [https://dlanz1.github.io/3DTee/](https://dlan
 - **Static typing** with primitives (`int`, `float`, `bool`, `string`), arrays (`[T]`), function types (`(T) -> U`), and optionals (`T?`)
 - **Declarations** — `bag` for variables, `pin` for constants, `course` for user-defined record types
 - **First-class functions** via `swing`, with typed parameters, return types, and nested function types
-- **Control flow** — `readLie` / `otherwise` (if/else), `whileBall` (while), `practice { ... } whileBall <condition>;` (repeat), and `play <id> through <collection>` (for-each)
+- **Control flow** — `readLie` / `otherwise` (if/else), `whileBall` (while), `practice` (repeat), and `play <id> through <range-or-collection>` (for)
 - **Flow exits** — `shank` to break out of a loop, `sink` to return from a function
 - **Rich expression language**: ternary (`?:`), null-coalescing (`??`), logical (`&&`, `||`), bitwise (`|`, `^`, `&`), shifts (`<<`, `>>`), relational, arithmetic, exponentiation (`**`), and length prefix (`#`)
 - **Booleans**: `fairway` (true) and `rough` (false)
@@ -64,14 +66,12 @@ Where `<outputType>` is one of:
 - `optimized` — the optimized representation
 - `js` — the JavaScript translation
 
-Current status: parsing and analysis are implemented; optimization and JavaScript generation are still placeholders.
-
 ## Example
 
 ```
 teeOff
   bag score = 72;
-  pin par = 72;
+  pin, par = 72;
 
   swing relativeToPar(s: int): int {
     sink s - par;
